@@ -5,7 +5,6 @@
 
 using namespace cv;
 using namespace std;
-// 640x480, 1920x1440, 2400x1800, 4008x3006
 
 static __inline__ unsigned long long rdtsc(void) {
   unsigned hi, lo;
@@ -29,12 +28,6 @@ int main( int argc, char** argv ){
 	for(int i = 0; i < NUM_OF_IMAGES; i++){
 		images[i] = imread(fileNames[i]);
 	}
-	// int fileSizes[NUM_OF_IMAGES][2] = {
-	// 	{640, 480},
-	// 	{1920, 1440},
-	// 	{2400, 1800},
-	// 	{4008, 3006},
-	// };
 	int fileSizes[NUM_OF_IMAGES][2] = {
 		{ 480, 640},
 		{ 1440, 1920},
@@ -51,10 +44,13 @@ int main( int argc, char** argv ){
 			unsigned long long startTime, endTime;
 			startTime = rdtsc();
 			resize(image, resized_down, Size(down_width, down_height), INTER_LANCZOS4);
+			//Resizing the image - benchmark part
 			endTime = rdtsc()-startTime;
 			std::ostringstream oss;
 			oss << "/afs/andrew.cmu.edu/usr18/arexhari/public/645-project/results/benchmark/" <<image.rows<<"x"<< image.cols <<"-"<<fileSizes[j][0] << "x" << fileSizes[j][1]<<".jpg";
 			std::string var = oss.str();
+
+			//Validation and image comparision
 			cv::compare(resized_down , images[compareCount++]  , result , cv::CMP_NE );
 			count = 0.0;
 			for (int p = 0; p < result.cols; p++ ) {
@@ -65,6 +61,8 @@ int main( int argc, char** argv ){
 				}
 			}
 			percentage = count/(result.cols*result.rows);
+
+			//stdout for plot data collection
 			cout << image.rows<<","<<fileSizes[j][0] <<","<< endTime<<","<< percentage <<"\n";
 			imwrite(var, resized_down);
 		}
