@@ -20,7 +20,9 @@ benchmark : src/benchmark.cpp
 	@echo ==========================================
 	mkdir -p results/benchmark/
 	./build/benchmark > plots/benchmarkTime.csv
+	python scripts/plotPerformance.py
 
 clean : 
 	rm -rf build/*
 	rm -rf results/*
+	rm -rf plots/*
