@@ -22,6 +22,9 @@ benchmark : src/benchmark.cpp
 	./build/benchmark > plots/benchmarkTime.csv
 	python scripts/plotPerformance.py
 
+kernel: src/kernel.cpp
+	gcc $(CFLAGS) $(LIBS) -o build/$@ $<
+	
 clean : 
 	rm -rf build/*
 	rm -rf results/*

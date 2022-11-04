@@ -9,27 +9,16 @@ uElements = np.unique(data[:,0]).astype(int)
 bar_width = 0.35
 index = np.arange(6)
 fig= plt.subplots()
-# a = data[np.where(data[:,0] == i)]
-# b = a[:,2].astype(int)
-a = data[np.where(data[:,0] == uElements[0])][:,2]
-print(index)
-print(a)
-b = data[np.where(data[:,0] == uElements[1])]
-c = data[np.where(data[:,0] == uElements[2])]
-d = data[np.where(data[:,0] == uElements[3])]
-plt.bar(index, a, bar_width, alpha=0.8 )
-index = index+bar_width
-# plt.bar(index, b[:,2], bar_width, alpha=0.8 )
-# index = index+bar_width
-# plt.bar(index, c[:,2], bar_width, alpha=0.8 )
-# index = index+bar_width
-# plt.bar(index, d[:,2], bar_width, alpha=0.8 )
+    a = data[np.where(data[:,0] == i)]
+    b = a[:,2].astype(int)
+    plt.bar(index, b, bar_width, alpha=0.8 )
+    index = index+bar_width
 plt.xticks(uElements)
 plt.legend(uElements, loc='upper left')
 plt.xlabel('Upscale Size')
 plt.ylabel('Number of cycles') 
 plt.title('Benchmark Implementation Performance')
-plt.savefig("./plots/result.png")
+plt.savefig("./plots/result%d.png"%i)
 plt.close()
 
 
