@@ -28,9 +28,10 @@ void kernelSauce(float *kernelPoints){
         b1*c, b2*c, b3*c, b4*c 
         b1*d, b2*d, b3*d, b4*d
     */
-    vec1 = _mm_set_ps(1, 2/3.0, 1/3.0, 0); //z*a1*c
-    vec2 = _mm_set_ps(6/9.0, 4/9.0, 2/9.0, 0); //z*a2*c
-    vec3 = _mm_set_ps(3/9.0, 2/9.0, 1/9.0, 0); //z*a3*c
+    //_mm_set_ps(e3,e2,e1,e0)
+    vec1 = _mm_set_ps(0, 1/3.0, 2/3.0, 1); //z*a1*c
+    vec2 = _mm_set_ps(0, 2/9.0, 4/9.0, 6/9.0); //z*a2*c
+    vec3 = _mm_set_ps(0, 1/9.0, 2/9.0, 3/9.0); //z*a3*c
     vec4 = _mm_set_ps(0, 0, 0, 0); //z*a4*c
     _mm_store_ps(kernelPoints, vec1);
     _mm_store_ps(kernelPoints + 4, vec2);
@@ -38,28 +39,28 @@ void kernelSauce(float *kernelPoints){
     _mm_store_ps(kernelPoints + 12, vec4);
     
 
-    vec1 = _mm_set_ps(0, 1/3.0, 2/3.0, 1); //z*a1*d
-    vec2 = _mm_set_ps(0, 2/9.0, 4/9.0, 6/9.0); //z*a2*d
-    vec3 = _mm_set_ps(0, 1/9.0, 2/9.0, 3/9.0); //z*a3*d
+    vec1 = _mm_set_ps(1, 2/3.0, 1/3.0, 0); //z*a1*d
+    vec2 = _mm_set_ps(6/9.0, 4/9.0, 2/9.0, 0); //z*a2*d
+    vec3 = _mm_set_ps(3/9.0, 2/9.0, 1/9.0, 0); //z*a3*d
     vec4 = _mm_set_ps(0, 0, 0, 0); //z*a4*c
     _mm_store_ps(kernelPoints + 16, vec1);
     _mm_store_ps(kernelPoints + 20, vec2);
     _mm_store_ps(kernelPoints + 24, vec3);
     _mm_store_ps(kernelPoints + 28, vec4);
 
-    vec4 = _mm_set_ps(1, 2/3.0, 1/3.0, 0); //z*b4*c
-    vec3 = _mm_set_ps(6/9.0, 4/9.0, 2/9.0, 0); //z*b3*c
-    vec2 = _mm_set_ps(3/9.0, 2/9.0, 1/9.0, 0); //z*b2*c
+    vec4 = _mm_set_ps(0, 1/3.0, 2/3.0, 1); //z*b4*c
+    vec3 = _mm_set_ps(0, 2/9.0, 4/9.0, 6/9.0); //z*b3*c
+    vec2 = _mm_set_ps(0, 1/9.0, 2/9.0, 3/9.0); //z*b2*c
     vec1 = _mm_set_ps(0, 0, 0, 0); //z*b1*c
     _mm_store_ps(kernelPoints + 32, vec1);
     _mm_store_ps(kernelPoints + 36, vec2);
     _mm_store_ps(kernelPoints + 40, vec3);
     _mm_store_ps(kernelPoints + 44, vec4);
     
-    vec4 = _mm_set_ps(0, 1/3.0, 2/3.0, 1); //z*b4*d
-    vec3 = _mm_set_ps(0, 2/9.0, 4/9.0, 6/9.0); //z*b3*d
-    vec2 = _mm_set_ps(0, 1/9.0, 2/9.0, 3/9.0); //z*b2*d
-    vec1 = _mm_set_ps(0, 0, 0, 0); //z*b1*d
+    vec4 = _mm_set_ps(1.0, 2/3.0, 1/3.0, 0.0); //z*b4*d
+    vec3 = _mm_set_ps(6/9.0, 4/9.0, 2/9.0, 0.0); //z*b3*d
+    vec2 = _mm_set_ps(3/9.0, 2/9.0, 1/9.0, 0.0); //z*b2*d
+    vec1 = _mm_set_ps(0.0, 0.0, 0.0, 0.0); //z*b1*d
     _mm_store_ps(kernelPoints + 48, vec1);
     _mm_store_ps(kernelPoints + 52, vec2);
     _mm_store_ps(kernelPoints + 56, vec3);
@@ -68,31 +69,52 @@ void kernelSauce(float *kernelPoints){
 
 void kernel(float *Ri, float *Gi, float *Bi, float *Ro, float *Go, float *Bo, float *kernelPoints){
     int i;
-    __m128 R, G, B, K1, K2, rOut1, rOut2, gOut1, gOut2, bOut1, bOut2;
-    R = _mm_load_ps(Ri); G = _mm_load_ps(Gi); B = _mm_load_ps(Bi);
+    __m128 Rin, R, Gin, G, Bin, B, K1, K2, rOut1, rOut2, gOut1, gOut2, bOut1, bOut2;
+    Rin = _mm_load_ps(Ri); Gin = _mm_load_ps(Gi); Bin = _mm_load_ps(Bi);
     K1 = _mm_load_ps(kernelPoints); K2 = _mm_load_ps(kernelPoints+4);
     rOut1 = _mm_load_ps(Ro); rOut2 = _mm_load_ps(Ro+4);
     gOut1 = _mm_load_ps(Go); gOut2 = _mm_load_ps(Go+4);
     bOut1 = _mm_load_ps(Bo); bOut2 = _mm_load_ps(Bo+4);
+     
+    const int mask1 = (0) | (0 << 2) | (0 << 4) | (0 << 6);
+    R = _mm_permute_ps(Rin, mask1);
+    G = _mm_permute_ps(Gin, mask1);
+    B = _mm_permute_ps(Bin, mask1);
     rOut1 = _mm_fmadd_ps(R, K1, rOut1); rOut2 = _mm_fmadd_ps(R, K2, rOut2);
     gOut1 = _mm_fmadd_ps(G, K1, gOut1); gOut2 = _mm_fmadd_ps(G, K2, gOut2);
     bOut1 = _mm_fmadd_ps(B, K1, bOut1); bOut2 = _mm_fmadd_ps(B, K2, bOut2);
-
+    
+    
+    const int mask2 = (1) | (1 << 2) | (1 << 4) | (1 << 6);
+    R = _mm_permute_ps(Rin, mask2);
+    G = _mm_permute_ps(Gin, mask2);
+    B = _mm_permute_ps(Bin, mask2);
     K1 = _mm_load_ps(kernelPoints+16); K2 = _mm_load_ps(kernelPoints+20);
     rOut1 = _mm_fmadd_ps(R, K1, rOut1); rOut2 = _mm_fmadd_ps(R, K2, rOut2);
     gOut1 = _mm_fmadd_ps(G, K1, gOut1); gOut2 = _mm_fmadd_ps(G, K2, gOut2);
     bOut1 = _mm_fmadd_ps(B, K1, bOut1); bOut2 = _mm_fmadd_ps(B, K2, bOut2);
+  
 
+    const int mask3 = (2) | (2 << 2) | (2 << 4) | (2 << 6);
+    R = _mm_permute_ps(Rin, mask3);
+    G = _mm_permute_ps(Gin, mask3);
+    B = _mm_permute_ps(Bin, mask3);
     K1 = _mm_load_ps(kernelPoints+32); K2 = _mm_load_ps(kernelPoints+36);
     rOut1 = _mm_fmadd_ps(R, K1, rOut1); rOut2 = _mm_fmadd_ps(R, K2, rOut2);
     gOut1 = _mm_fmadd_ps(G, K1, gOut1); gOut2 = _mm_fmadd_ps(G, K2, gOut2);
     bOut1 = _mm_fmadd_ps(B, K1, bOut1); bOut2 = _mm_fmadd_ps(B, K2, bOut2);
 
+
+    const int mask4 = (3) | (3 << 2) | (3 << 4) | (3 << 6);
+    R = _mm_permute_ps(Rin, mask4);
+    G = _mm_permute_ps(Gin, mask4);
+    B = _mm_permute_ps(Bin, mask4);
     K1 = _mm_load_ps(kernelPoints+48); K2 = _mm_load_ps(kernelPoints+52);
     rOut1 = _mm_fmadd_ps(R, K1, rOut1); rOut2 = _mm_fmadd_ps(R, K2, rOut2);    
     gOut1 = _mm_fmadd_ps(G, K1, gOut1); gOut2 = _mm_fmadd_ps(G, K2, gOut2);    
     bOut1 = _mm_fmadd_ps(B, K1, bOut1); bOut2 = _mm_fmadd_ps(B, K2, bOut2);
-    
+
+
     _mm_store_ps(Ro, rOut1); _mm_store_ps(Ro+4 , rOut2);
     _mm_store_ps(Go, gOut1); _mm_store_ps(Go+4 , gOut2);
     _mm_store_ps(Bo, bOut1); _mm_store_ps(Bo+4 , bOut2);
@@ -103,20 +125,36 @@ void kernel(float *Ri, float *Gi, float *Bi, float *Ro, float *Go, float *Bo, fl
     rOut1 = _mm_load_ps(Ro+8); rOut2 = _mm_load_ps(Ro+12);
     gOut1 = _mm_load_ps(Go+8); gOut2 = _mm_load_ps(Go+12);
     bOut1 = _mm_load_ps(Bo+8); bOut2 = _mm_load_ps(Bo+12);
+    
+    R = _mm_permute_ps(Rin, mask1);
+    G = _mm_permute_ps(Gin, mask1);
+    B = _mm_permute_ps(Bin, mask1);
     rOut1 = _mm_fmadd_ps(R, K1, rOut1); rOut2 = _mm_fmadd_ps(R, K2, rOut2);
     gOut1 = _mm_fmadd_ps(G, K1, gOut1); gOut2 = _mm_fmadd_ps(G, K2, gOut2);
     bOut1 = _mm_fmadd_ps(B, K1, bOut1); bOut2 = _mm_fmadd_ps(B, K2, bOut2);
 
+
+    R = _mm_permute_ps(Rin, mask2);
+    G = _mm_permute_ps(Gin, mask2);
+    B = _mm_permute_ps(Bin, mask2);
     K1 = _mm_load_ps(kernelPoints+24); K2 = _mm_load_ps(kernelPoints+28);
     rOut1 = _mm_fmadd_ps(R, K1, rOut1); rOut2 = _mm_fmadd_ps(R, K2, rOut2);
     gOut1 = _mm_fmadd_ps(G, K1, gOut1); gOut2 = _mm_fmadd_ps(G, K2, gOut2);
     bOut1 = _mm_fmadd_ps(B, K1, bOut1); bOut2 = _mm_fmadd_ps(B, K2, bOut2);
 
+    
+    R = _mm_permute_ps(Rin, mask3);
+    G = _mm_permute_ps(Gin, mask3);
+    B = _mm_permute_ps(Bin, mask3);
     K1 = _mm_load_ps(kernelPoints+40); K2 = _mm_load_ps(kernelPoints+44);
     rOut1 = _mm_fmadd_ps(R, K1, rOut1); rOut2 = _mm_fmadd_ps(R, K2, rOut2);
     gOut1 = _mm_fmadd_ps(G, K1, gOut1); gOut2 = _mm_fmadd_ps(G, K2, gOut2);
     bOut1 = _mm_fmadd_ps(B, K1, bOut1); bOut2 = _mm_fmadd_ps(B, K2, bOut2);
 
+
+    R = _mm_permute_ps(Rin, mask4);
+    G = _mm_permute_ps(Gin, mask4);
+    B = _mm_permute_ps(Bin, mask4);
     K1 = _mm_load_ps(kernelPoints+56); K2 = _mm_load_ps(kernelPoints+60);
     rOut1 = _mm_fmadd_ps(R, K1, rOut1); rOut2 = _mm_fmadd_ps(R, K2, rOut2);    
     gOut1 = _mm_fmadd_ps(G, K1, gOut1); gOut2 = _mm_fmadd_ps(G, K2, gOut2);    
@@ -129,12 +167,43 @@ void kernel(float *Ri, float *Gi, float *Bi, float *Ro, float *Go, float *Bo, fl
 
 int main( int argc, char** argv ){
     int i, j;
-    float inputImageR[12] = {1,2,3,4};
-    float inputImageG[12] = {5,8,9,11};
-    float inputImageB[12] = {6,7,10,12};
+    float inputImageR[4] = {1,2,3,4};
+    float inputImageG[4] = {5,8,8,11};
+    float inputImageB[4] = {6,9,9,12};
     float *outputImage = (float*)calloc(48,sizeof(float));
     float *kernelPoints = (float*)malloc(64*sizeof(float));
+
+    float *outputR = (float*)calloc(16,sizeof(float));
+    float *outputG = (float*)calloc(16,sizeof(float));
+    float *outputB = (float*)calloc(16,sizeof(float));
     kernelSauce(kernelPoints);
+
+
+    kernel(inputImageR,inputImageG,inputImageB,outputR, outputG, outputB, kernelPoints);
+    cout << "R=========================\n";
+    for(i=0;i<16;){
+        for(j=0;j<4;j++){
+            cout<<outputR[i++]<<'\t';
+        }
+        cout<<'\n';
+    }
+    cout << "G=========================\n";
+    for(i=0;i<16;i){
+        for(j=0;j<4;j++){
+            cout<<outputG[i++]<<'\t';
+        }
+        cout<<'\n';
+    }
+    cout << "B=========================\n";
+    for(i=0;i<16;i){
+        for(j=0;j<4;j++){
+            cout<<outputB[i++]<<'\t';
+        }
+        cout<<'\n';
+    }
     free(outputImage);
     free(kernelPoints);
+    free(outputR);
+    free(outputG);
+    free(outputB);
 }

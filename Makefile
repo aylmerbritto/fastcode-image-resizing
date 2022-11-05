@@ -1,4 +1,4 @@
-CFLAGS = `pkg-config --cflags opencv`
+CFLAGS = `pkg-config --cflags opencv` -mavx -mavx2 -mfma
 LIBS = `pkg-config --libs opencv`
 
 versiontest : src/version.cpp
@@ -23,8 +23,11 @@ benchmark : src/benchmark.cpp
 	python scripts/plotPerformance.py
 
 kernel: src/kernel.cpp
-	gcc $(CFLAGS) $(LIBS) -o build/$@ $<
-	
+	@echo ==========================================
+	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
+
+memory: src/memory.cpp
+	g++ $(CFLAGS) $(LIBS) -o build/$@ $<	
 clean : 
 	rm -rf build/*
 	rm -rf results/*
