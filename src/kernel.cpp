@@ -28,7 +28,6 @@ void kernelSauce(float *kernelPoints){
         b1*c, b2*c, b3*c, b4*c 
         b1*d, b2*d, b3*d, b4*d
     */
-    //_mm_set_ps(e3,e2,e1,e0)
     vec1 = _mm_set_ps(0, 1/3.0, 2/3.0, 1); //z*a1*c
     vec2 = _mm_set_ps(0, 2/9.0, 4/9.0, 6/9.0); //z*a2*c
     vec3 = _mm_set_ps(0, 1/9.0, 2/9.0, 3/9.0); //z*a3*c
@@ -67,7 +66,7 @@ void kernelSauce(float *kernelPoints){
     _mm_store_ps(kernelPoints + 60, vec4);
 }
 
-void kernel(float *Ri, float *Gi, float *Bi, float *Ro, float *Go, float *Bo, float *kernelPoints){
+void kernel(float *Ri, float *Gi, float *Bi, float *Ro, float *Go, float *Bo, float *kernelPoints, int rowSize){
     int i;
     __m128 Rin, R, Gin, G, Bin, B, K1, K2, rOut1, rOut2, gOut1, gOut2, bOut1, bOut2;
     Rin = _mm_load_ps(Ri); Gin = _mm_load_ps(Gi); Bin = _mm_load_ps(Bi);
@@ -115,9 +114,9 @@ void kernel(float *Ri, float *Gi, float *Bi, float *Ro, float *Go, float *Bo, fl
     bOut1 = _mm_fmadd_ps(B, K1, bOut1); bOut2 = _mm_fmadd_ps(B, K2, bOut2);
 
 
-    _mm_store_ps(Ro, rOut1); _mm_store_ps(Ro+4 , rOut2);
-    _mm_store_ps(Go, gOut1); _mm_store_ps(Go+4 , gOut2);
-    _mm_store_ps(Bo, bOut1); _mm_store_ps(Bo+4 , bOut2);
+    _mm_store_ps(Ro, rOut1); _mm_store_ps(Ro+rowSize , rOut2);
+    _mm_store_ps(Go, gOut1); _mm_store_ps(Go+rowSize , gOut2);
+    _mm_store_ps(Bo, bOut1); _mm_store_ps(Bo+rowSize , bOut2);
 
     //==========================================================================
 
@@ -160,26 +159,31 @@ void kernel(float *Ri, float *Gi, float *Bi, float *Ro, float *Go, float *Bo, fl
     gOut1 = _mm_fmadd_ps(G, K1, gOut1); gOut2 = _mm_fmadd_ps(G, K2, gOut2);    
     bOut1 = _mm_fmadd_ps(B, K1, bOut1); bOut2 = _mm_fmadd_ps(B, K2, bOut2);
     
-    _mm_store_ps(Ro+8, rOut1); _mm_store_ps(Ro+12 , rOut2);
-    _mm_store_ps(Go+8, gOut1); _mm_store_ps(Go+12 , gOut2);
-    _mm_store_ps(Bo+8, bOut1); _mm_store_ps(Bo+12 , bOut2);
+    _mm_store_ps(Ro+(2*rowSize), rOut1); _mm_store_ps(Ro+(3*rowSize) , rOut2);
+    _mm_store_ps(Go+(2*rowSize), gOut1); _mm_store_ps(Go+(3*rowSize) , gOut2);
+    _mm_store_ps(Bo+(2*rowSize), bOut1); _mm_store_ps(Bo+(3*rowSize) , bOut2);
 }
 
 int main( int argc, char** argv ){
+    //Image Information stack
+    int rowSize = 4;
+
+    //Algorithm Logistics Stack defintion
     int i, j;
     float inputImageR[4] = {1,2,3,4};
     float inputImageG[4] = {5,8,8,11};
     float inputImageB[4] = {6,9,9,12};
     float *outputImage = (float*)calloc(48,sizeof(float));
     float *kernelPoints = (float*)malloc(64*sizeof(float));
-
+    
+    //Output Image Stack defintion
     float *outputR = (float*)calloc(16,sizeof(float));
     float *outputG = (float*)calloc(16,sizeof(float));
     float *outputB = (float*)calloc(16,sizeof(float));
     kernelSauce(kernelPoints);
 
 
-    kernel(inputImageR,inputImageG,inputImageB,outputR, outputG, outputB, kernelPoints);
+    kernel(inputImageR,inputImageG,inputImageB,outputR, outputG, outputB, kernelPoints, rowSize);
     cout << "R=========================\n";
     for(i=0;i<16;){
         for(j=0;j<4;j++){
