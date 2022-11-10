@@ -107,7 +107,7 @@ void generateCoefficients(float *coefficients)
     _mm_store_ps(coefficients + 60, vec4);
 }
 
-void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float *intensityRout, float *intensityGout, float *intensityBout, int rowSize)
+void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float *intensityRout, float *intensityGout, float *intensityBout, float *coefficients, int rowSize)
 {
     // kernel points contains the coefficients
     // intensityRin, intensityGin, intensityBin are the pixel values of the input photo
@@ -116,10 +116,6 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     __m128 tmpR, tmpG, tmpB;
     __m128 coefsA, coefsB;
     __m128 outRA, outRB, outGA, outGB, outBA, outBB;
-
-    // generate coefficients
-    float *coefficients = (float *)calloc(4 * 4 * 4, sizeof(float));
-    generateCoefficients(coefficients);
 
     // load inR, inG, inB pixel values (4 values each)
     inR = _mm_load_ps(intensityRin);
@@ -261,8 +257,6 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     _mm_store_ps(intensityGout + (3 * rowSize), outGB);
     _mm_store_ps(intensityBout + (2 * rowSize), outBA);
     _mm_store_ps(intensityBout + (3 * rowSize), outBB);
-
-    free(coefficients);
 }
 
 int main(int argc, char **argv)
@@ -283,8 +277,10 @@ int main(int argc, char **argv)
     float inputImageG[4] = {1, 1, 1, 1};
     float inputImageB[4] = {1, 1, 1, 1};
 
-    // generateCoefficients(coefficients);
-    kernel(inputImageR, inputImageG, inputImageB, outputR, outputG, outputB, rowSize);
+    // generate coefficients
+    float *coefficients = (float *)calloc(4 * 4 * 4, sizeof(float));
+    generateCoefficients(coefficients);
+    kernel(inputImageR, inputImageG, inputImageB, outputR, outputG, outputB, coefficients, rowSize);
 
     cout << "R=========================\n";
     for (int i = 0; i < 16;)
@@ -314,6 +310,7 @@ int main(int argc, char **argv)
         cout << '\n';
     }
     free(outputImage);
+    free(coefficients);
     free(outputR);
     free(outputG);
     free(outputB);
