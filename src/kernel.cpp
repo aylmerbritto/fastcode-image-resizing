@@ -16,18 +16,18 @@ void kernelSauce(float *kernelPoints)
         TODO: To calculate Z,A,B,C,D
         The Values are going to be the same throughout given the kernel input and output are the same
     */
-    float Z = 1 / 9;
-    int kernelSauceIndex = 0, i;
-    float a1[4] = {3, 3, 3, 3};
-    float a2[4] = {2, 2, 2, 2};
-    float a3[4] = {1, 1, 1, 1};
-    float a4[4] = {0, 0, 0, 0};
-    float b4[4] = {3, 3, 3, 3};
-    float b3[4] = {2, 2, 2, 2};
-    float b2[4] = {1, 1, 1, 1};
-    float b1[4] = {0, 0, 0, 0};
-    float c[4] = {3, 2, 1, 0};
-    float d[4] = {0, 1, 2, 3};
+    // float Z = 1 / 9;
+    // int kernelSauceIndex = 0, i;
+    // float a1[4] = {3, 3, 3, 3};
+    // float a2[4] = {2, 2, 2, 2};
+    // float a3[4] = {1, 1, 1, 1};
+    // float a4[4] = {0, 0, 0, 0};
+    // float b4[4] = {3, 3, 3, 3};
+    // float b3[4] = {2, 2, 2, 2};
+    // float b2[4] = {1, 1, 1, 1};
+    // float b1[4] = {0, 0, 0, 0};
+    // float c[4] = {3, 2, 1, 0};
+    // float d[4] = {0, 1, 2, 3};
     __m128 vec1, vec2, vec3, vec4;
     // float *result = (float*)calloc(4,sizeof(float));
     /*
