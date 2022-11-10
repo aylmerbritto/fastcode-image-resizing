@@ -4,20 +4,20 @@
 using namespace cv;
 using namespace std;
 
-int main( int argc, char** argv )
+int main(int argc, char **argv)
 {
   cout << "OpenCV version : " << CV_VERSION << endl;
   cout << "Major version : " << CV_MAJOR_VERSION << endl;
   cout << "Minor version : " << CV_MINOR_VERSION << endl;
   cout << "Subminor version : " << CV_SUBMINOR_VERSION << endl;
 
-  if ( CV_MAJOR_VERSION < 3)
+  if (CV_MAJOR_VERSION < 3)
   {
-      cout << "hi";
-  } else
+    cout << "hi";
+  }
+  else
   {
-      cout << "lower version opencv code";
+    cout << "lower version opencv code";
   }
   return 0;
 }
-

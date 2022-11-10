@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <stdio.h>
+#include <stdlib.h>
 #include <cstdlib>
 #include <x86intrin.h>
 #include "xmmintrin.h"
@@ -9,6 +11,18 @@
 
 using namespace cv;
 using namespace std;
+
+#define MAX_FREQ 3.2
+#define BASE_FREQ 2.4
+
+// timing routine for reading the time stamp counter
+static __inline__ unsigned long long rdtsc(void)
+{
+    unsigned hi, lo;
+    __asm__ __volatile__("rdtsc"
+                         : "=a"(lo), "=d"(hi));
+    return ((unsigned long long)lo) | (((unsigned long long)hi) << 32);
+}
 
 void generateCoefficients(float *coefficients)
 {
@@ -261,6 +275,7 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
 
 int main(int argc, char **argv)
 {
+    unsigned long long t0, t1;
     // kernel width
     int rowSize = 4;
 
@@ -277,10 +292,13 @@ int main(int argc, char **argv)
     float inputImageG[4] = {1, 1, 1, 1};
     float inputImageB[4] = {1, 1, 1, 1};
 
+    t0 = rdtsc();
     // generate coefficients
     float *coefficients = (float *)calloc(4 * 4 * 4, sizeof(float));
     generateCoefficients(coefficients);
     kernel(inputImageR, inputImageG, inputImageB, outputR, outputG, outputB, coefficients, rowSize);
+    t1 = rdtsc();
+    printf("cycles taken (I think): %f\n", ((double)(t1 - t0) * MAX_FREQ / BASE_FREQ));
 
     cout << "R=========================\n";
     for (int i = 0; i < 16;)
