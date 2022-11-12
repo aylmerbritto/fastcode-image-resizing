@@ -8,10 +8,10 @@ using namespace std;
 
 static __inline__ unsigned long long rdtsc(void)
 {
-	unsigned hi, lo;
-	__asm__ __volatile__("rdtsc"
-						 : "=a"(lo), "=d"(hi));
-	return ((unsigned long long)lo) | (((unsigned long long)hi) << 32);
+    unsigned hi, lo;
+    __asm__ __volatile__("rdtsc"
+                         : "=a"(lo), "=d"(hi));
+    return ((unsigned long long)lo) | (((unsigned long long)hi) << 32);
 }
 
 #define NUM_OF_IMAGES 4
@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 			Mat resized_down;
 			unsigned long long startTime, endTime;
 			startTime = rdtsc();
-			resize(image, resized_down, Size(down_width, down_height), INTER_NEAREST);
+			resize(image, resized_down, Size(down_width, down_height), INTER_LINEAR);
 			// Resizing the image - benchmark part
 			endTime = rdtsc() - startTime;
 			std::ostringstream oss;

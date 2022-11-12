@@ -22,12 +22,25 @@ benchmark : src/benchmark.cpp
 	./build/benchmark > plots/benchmarkTime.csv
 	python scripts/plotPerformance.py
 
-kernel: src/kernel.cpp
+kernel: src/kernelImage.cpp
 	@echo ==========================================
 	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
 
+
 memory: src/memory.cpp
 	g++ $(CFLAGS) $(LIBS) -o build/$@ $<	
+
+nn: src/nnImage.cpp
+	@echo ==========================================
+	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
+
+bm : src/benchmarkSpec.cpp
+	@echo ==========================================
+	@echo Compiling benchmark script
+	@echo ==========================================
+	mkdir -p build/
+	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
+
 clean : 
 	rm -rf build/*
 	rm -rf results/*

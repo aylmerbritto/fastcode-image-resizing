@@ -12,7 +12,7 @@
 using namespace cv;
 using namespace std;
 
-int main()
+int decodeImage()
 {
     int i, j, index = 0;
     float *tmpBuffer;
