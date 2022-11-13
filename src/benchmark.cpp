@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 	unsigned long long endTime;
 	startTime = rdtsc();
 	// resize(image, resized_down, Size(down_width, down_height), INTER_LINEAR);
-	resize(image, resized_down, Size(down_width, down_height), INTER_LINEAR);
+	resize(image, resized_down, Size(down_width, down_height), INTER_NEAREST);
 	// Resizing the image - benchmark part
 	endTime = rdtsc() - startTime;
 	std::ostringstream oss;
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 	// std::string var = oss.str();
 	// cout << image.rows << "," << fileSizes[j][0] << "," << endTime << "\n";
 	// imwrite(var, resized_down);
-	imwrite("/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/results/bl/cv/8x8-16x16.jpg", resized_down);
+	imwrite("/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/results/nn/cv/8x8-16x16.jpg", resized_down);
 	// 	}
 	// }
 
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 	char AfileName[100];
 	strcpy(AfileName, home);
 	// strcat(AfileName, "results/bl/my/640x480-1280x960.jpg");
-	strcat(AfileName, "results/bl/my/8x8-16x16.jpg");
+	strcat(AfileName, "results/nn/my/8x8-16x16.jpg");
 
 	cout << AfileName << endl;
 	decodeImage(AinputImageR, AinputImageG, AinputImageB, AfileName);
@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 	char BfileName[100];
 	strcpy(BfileName, home);
 	// strcat(BfileName, "results/bl/cv/640x480-1280x960.jpg");
-	strcat(BfileName, "results/bl/cv/8x8-16x16.jpg");
+	strcat(BfileName, "results/nn/cv/8x8-16x16.jpg");
 
 	cout << BfileName << endl;
 	decodeImage(BinputImageR, BinputImageG, BinputImageB, BfileName);
