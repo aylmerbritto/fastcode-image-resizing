@@ -155,36 +155,38 @@ int main(int argc, char **argv)
 		{
 			cout << endl;
 		}
-		if (abs(AinputImageR[i] - BinputImageR[i]) > 0.1)
-		{
-			correct = false;
-			cout << abs(AinputImageR[i] - BinputImageR[i]) << "\t";
-			// cout << "image A and B are not the same" << endl;
-			// break;
-		}
-		if (abs(AinputImageG[i] - BinputImageG[i]) > 0.1)
-		{
-			correct = false;
-			// cout <<  abs(AinputImageR[i] - BinputImageR[i]) << "\t";
-			// cout << "image A and B are not the same" << endl;
-			// break;
-		}
-		if (abs(AinputImageB[i] - BinputImageB[i]) > 0.1)
-		{
-			correct = false;
-			// cout << "image A and B are not the same" << endl;
-			// break;
-		}
+		// if (abs(AinputImageR[i] - BinputImageR[i]) > 0.1)
+		// {
+		// correct = false;
+		cout << abs(AinputImageR[i] - BinputImageR[i]) << "\t";
+		// cout << "image A and B are not the same" << endl;
+		// break;
+		// }
+		// if (abs(AinputImageG[i] - BinputImageG[i]) > 0.1)
+		// {
+		// correct = false;
+		// cout << abs(AinputImageG[i] - BinputImageG[i]) << "\t";
+		// cout <<  abs(AinputImageR[i] - BinputImageR[i]) << "\t";
+		// cout << "image A and B are not the same" << endl;
+		// break;
+		// }
+		// if (abs(AinputImageB[i] - BinputImageB[i]) > 0.1)
+		// {
+		// 	correct = false;
+		// cout << abs(AinputImageB[i] - BinputImageB[i]) << "\t";
+		// cout << "image A and B are not the same" << endl;
+		// break;
+		// }
 	}
 	cout << endl;
-	if (correct)
-	{
-		cout << "images A and B are the same" << endl;
-	}
-	else
-	{
-		cout << "images A and B are not the same" << endl;
-	}
+	// if (correct)
+	// {
+	// 	cout << "images A and B are the same" << endl;
+	// }
+	// else
+	// {
+	// 	cout << "images A and B are not the same" << endl;
+	// }
 
 	return 0;
 }
