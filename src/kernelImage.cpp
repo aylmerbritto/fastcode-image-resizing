@@ -23,18 +23,21 @@ static __inline__ unsigned long long rdtsc(void)
                          : "=a"(lo), "=d"(hi));
     return ((unsigned long long)lo) | (((unsigned long long)hi) << 32);
 }
+char *home = "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/";
 
-int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB)
+int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB, char *fileName)
 {
     int i, j, index = 0;
     float *tmpBuffer;
     // READ IMAGE and Init buffers
-    const char *fileName = "/afs/ece.cmu.edu/usr/arexhari/Public/645-project/inputs/640x480.jpg";
-    Mat fullImage, windowImage;
+    // const char *fileName = "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/inputs/640x480.jpg";
+    Mat fullImage;
+    Mat windowImage;
     Mat channels[3];
     std::vector<float> array;
     fullImage = imread(fileName);
-    int imageRows = (int)fullImage.rows, imageCols = (int)fullImage.cols;
+    int imageRows = (int)fullImage.rows;
+    int imageCols = (int)fullImage.cols;
     cout << "Width : " << imageCols << endl;
     cout << "Height: " << imageRows << endl;
     // inputImageR = (float *)calloc(fullImage.cols * fullImage.rows, sizeof(float));
@@ -62,22 +65,25 @@ int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB)
     return 0;
 }
 
-int encodeImage(float *outputR, float *outputG, float *outputB){
-    const char *fileName = "/afs/ece.cmu.edu/usr/arexhari/Public/645-project/results/640x480-bl.jpg";
+int encodeImage(float *outputR, float *outputG, float *outputB, char *fileName)
+{
+    // const char *fileName = "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/results/640x480-bl.jpg";
     vector<Mat> channels;
     Mat finalImage;
-    cv::Mat matR = cv::Mat(480*2, 640*2, CV_32F, outputR);
-    cv::Mat matG = cv::Mat(480*2, 640*2, CV_32F, outputG);
-    cv::Mat matB = cv::Mat(480*2, 640*2, CV_32F, outputB);
+    // cv::Mat matR = cv::Mat(480 * 2, 640 * 2, CV_32F, outputR);
+    // cv::Mat matG = cv::Mat(480 * 2, 640 * 2, CV_32F, outputG);
+    // cv::Mat matB = cv::Mat(480 * 2, 640 * 2, CV_32F, outputB);
+    cv::Mat matR = cv::Mat(8 * 2, 8 * 2, CV_32F, outputR);
+    cv::Mat matG = cv::Mat(8 * 2, 8 * 2, CV_32F, outputG);
+    cv::Mat matB = cv::Mat(8 * 2, 8 * 2, CV_32F, outputB);
 
     channels.push_back(matB);
     channels.push_back(matG);
     channels.push_back(matR);
 
     merge(channels, finalImage);
-    imwrite(fileName, finalImage); 
+    imwrite(fileName, finalImage);
 }
-
 
 void generateCoefficients(float *coefficients)
 {
@@ -269,7 +275,7 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
 
     // for(int i =0; i<4; i++){
     //    int value =  (1 * rowSize)+i;
-    //    cout << intensityBout[value]<<'\t'; 
+    //    cout << intensityBout[value]<<'\t';
     // }
     // cout << endl;
     //==========================================================================
@@ -349,8 +355,10 @@ int main(int argc, char **argv)
 {
     unsigned long long t0, t1;
     // kernel width
-    int outputRowSize = 1280;
-    int outputColumnSize = 960;
+    // int outputRowSize = 1280;
+    // int outputColumnSize = 960;
+    int outputRowSize = 16;
+    int outputColumnSize = 16;
     int inputIndex, outputRow, outputColumn, outputIndex;
 
     // Output Image Stack defintion
@@ -359,27 +367,42 @@ int main(int argc, char **argv)
     float *outputB = (float *)calloc(outputRowSize * outputColumnSize, sizeof(float));
 
     // read in input 2x2 pixels
-    float *inputImageR = (float *)calloc(640 * 480, sizeof(float));
-    float *inputImageG = (float *)calloc(640 * 480, sizeof(float));
-    float *inputImageB = (float *)calloc(640 * 480, sizeof(float));
-    decodeImage(inputImageR, inputImageG, inputImageB);
+    // float *inputImageR = (float *)calloc(640 * 480, sizeof(float));
+    // float *inputImageG = (float *)calloc(640 * 480, sizeof(float));
+    // float *inputImageB = (float *)calloc(640 * 480, sizeof(float));
+    float *inputImageR = (float *)calloc(8 * 8, sizeof(float));
+    float *inputImageG = (float *)calloc(8 * 8, sizeof(float));
+    float *inputImageB = (float *)calloc(8 * 8, sizeof(float));
+
+    char AfileName[100];
+    strcpy(AfileName, home);
+    // strcat(AfileName, "inputs/640x480.jpg");
+    strcat(AfileName, "inputs/8x8.jpg");
+
+    decodeImage(inputImageR, inputImageG, inputImageB, AfileName);
 
     float *coefficients = (float *)calloc(4 * 4 * 4, sizeof(float));
     generateCoefficients(coefficients);
-    
+
     t0 = rdtsc();
     // generate coefficients
-    for(int i = 0; i < (outputColumnSize*outputRowSize)/16 ; i++){
-        inputIndex = (i*4);
-        outputRow = 4*((i*2)/(outputRowSize/2));
-        outputColumn = 2*((i*2)%(outputRowSize/2));
-        outputIndex = (outputRow*outputRowSize)+outputColumn;
-        kernel(inputImageR+inputIndex, inputImageG+inputIndex, inputImageB+inputIndex,outputR+outputIndex, outputG+outputIndex, outputB+outputIndex,coefficients, outputRowSize);
+    for (int i = 0; i < (outputColumnSize * outputRowSize) / 16; i++)
+    {
+        inputIndex = (i * 4);
+        outputRow = 4 * ((i * 2) / (outputRowSize / 2));
+        outputColumn = 2 * ((i * 2) % (outputRowSize / 2));
+        outputIndex = (outputRow * outputRowSize) + outputColumn;
+        kernel(inputImageR + inputIndex, inputImageG + inputIndex, inputImageB + inputIndex, outputR + outputIndex, outputG + outputIndex, outputB + outputIndex, coefficients, outputRowSize);
     }
     // kernel(inputImageR, inputImageG, inputImageB, outputR, outputG, outputB, coefficients, rowSize);
     t1 = rdtsc();
     printf("cycles taken (I think): %f\n", ((double)(t1 - t0) * MAX_FREQ / BASE_FREQ));
-    encodeImage(outputR, outputG, outputB);
+
+    char BfileName[100];
+    strcpy(BfileName, home);
+    strcat(BfileName, "results/bl/my/8x8-16x16.jpg");
+
+    encodeImage(outputR, outputG, outputB, BfileName);
     // cout << "R=========================\n";
     // for (int i = 0; i < outputColumnSize*outputRowSize;)
     // {
