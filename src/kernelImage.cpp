@@ -16,8 +16,8 @@ using namespace std;
 #define BASE_FREQ 2.4
 #define WINDOWSIZE 2
 
-#define ROWS 4
-#define COLS 4
+#define ROWS 8
+#define COLS 8
 
 // timing routine for reading the time stamp counter
 static __inline__ unsigned long long rdtsc(void)
@@ -74,6 +74,7 @@ int encodeImage(float *outputR, float *outputG, float *outputB, char *fileName)
     // const char *fileName = "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/results/640x480-bl.jpg";
     vector<Mat> channels;
     Mat finalImage;
+    Mat out;
     // cv::Mat matR = cv::Mat(480 * 2, 640 * 2, CV_32F, outputR);
     // cv::Mat matG = cv::Mat(480 * 2, 640 * 2, CV_32F, outputG);
     // cv::Mat matB = cv::Mat(480 * 2, 640 * 2, CV_32F, outputB);
@@ -86,7 +87,9 @@ int encodeImage(float *outputR, float *outputG, float *outputB, char *fileName)
     channels.push_back(matR);
 
     merge(channels, finalImage);
+    // transpose(finalImage, out);
     imwrite(fileName, finalImage);
+    // imwrite(fileName, out);
 }
 
 void generateCoefficients(float *coefficients)
@@ -209,57 +212,50 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     __m128 AC, AD, BC, BD;
 
     // same for all pixels in matrix
-    // RQ11 = _mm_broadcast_ss(&intensityRin[8 * row_i + 4 * col_i + 0]);
-    // RQ21 = _mm_broadcast_ss(&intensityRin[8 * row_i + 4 * col_i + 2]);
-    // RQ12 = _mm_broadcast_ss(&intensityRin[8 * row_i + 4 * col_i + 1]);
-    // RQ22 = _mm_broadcast_ss(&intensityRin[8 * row_i + 4 * col_i + 3]);
+    cout << "input indecies: " << (colSize * row_i) + (4) * col_i + 0 << endl;
+    RQ11 = _mm_broadcast_ss(&intensityRin[(colSize)*row_i + (4) * col_i + 0]);
+    RQ21 = _mm_broadcast_ss(&intensityRin[(colSize)*row_i + (4) * col_i + 1]);
+    RQ12 = _mm_broadcast_ss(&intensityRin[(colSize)*row_i + (4) * col_i + 2]);
+    RQ22 = _mm_broadcast_ss(&intensityRin[(colSize)*row_i + (4) * col_i + 3]);
 
-    // GQ11 = _mm_broadcast_ss(&intensityGin[8 * row_i + 4 * col_i + 0]);
-    // GQ21 = _mm_broadcast_ss(&intensityGin[8 * row_i + 4 * col_i + 2]);
-    // GQ12 = _mm_broadcast_ss(&intensityGin[8 * row_i + 4 * col_i + 1]);
-    // GQ22 = _mm_broadcast_ss(&intensityGin[8 * row_i + 4 * col_i + 3]);
+    GQ11 = _mm_broadcast_ss(&intensityGin[(colSize)*row_i + (4) * col_i + 0]);
+    GQ21 = _mm_broadcast_ss(&intensityGin[(colSize)*row_i + (4) * col_i + 1]);
+    GQ12 = _mm_broadcast_ss(&intensityGin[(colSize)*row_i + (4) * col_i + 2]);
+    GQ22 = _mm_broadcast_ss(&intensityGin[(colSize)*row_i + (4) * col_i + 3]);
 
-    // BQ11 = _mm_broadcast_ss(&intensityBin[8 * row_i + 4 * col_i + 0]);
-    // BQ21 = _mm_broadcast_ss(&intensityBin[8 * row_i + 4 * col_i + 2]);
-    // BQ12 = _mm_broadcast_ss(&intensityBin[8 * row_i + 4 * col_i + 1]);
-    // BQ22 = _mm_broadcast_ss(&intensityBin[8 * row_i + 4 * col_i + 3]);
-    // cout << "r vals: " << intensityRin[4 * row_i + 8 * col_i + 0] << "\t" << intensityRin[4 * row_i + 8 * col_i + 1] << "\t" << intensityRin[4 * row_i + 8 * col_i + 2] << "\t" << intensityRin[4 * row_i + 8 * col_i + 3] << endl;
-    RQ11 = _mm_broadcast_ss(&intensityRin[4 * row_i + 4 * col_i + 0]);
-    RQ21 = _mm_broadcast_ss(&intensityRin[4 * row_i + 4 * col_i + 2]);
-    RQ12 = _mm_broadcast_ss(&intensityRin[4 * row_i + 4 * col_i + 1]);
-    RQ22 = _mm_broadcast_ss(&intensityRin[4 * row_i + 4 * col_i + 3]);
-
-    GQ11 = _mm_broadcast_ss(&intensityGin[4 * row_i + 4 * col_i + 0]);
-    GQ21 = _mm_broadcast_ss(&intensityGin[4 * row_i + 4 * col_i + 2]);
-    GQ12 = _mm_broadcast_ss(&intensityGin[4 * row_i + 4 * col_i + 1]);
-    GQ22 = _mm_broadcast_ss(&intensityGin[4 * row_i + 4 * col_i + 3]);
-
-    BQ11 = _mm_broadcast_ss(&intensityBin[4 * row_i + 4 * col_i + 0]);
-    BQ21 = _mm_broadcast_ss(&intensityBin[4 * row_i + 4 * col_i + 2]);
-    BQ12 = _mm_broadcast_ss(&intensityBin[4 * row_i + 4 * col_i + 1]);
-    BQ22 = _mm_broadcast_ss(&intensityBin[4 * row_i + 4 * col_i + 3]);
+    BQ11 = _mm_broadcast_ss(&intensityBin[(colSize)*row_i + (4) * col_i + 0]);
+    BQ21 = _mm_broadcast_ss(&intensityBin[(colSize)*row_i + (4) * col_i + 1]);
+    BQ12 = _mm_broadcast_ss(&intensityBin[(colSize)*row_i + (4) * col_i + 2]);
+    BQ22 = _mm_broadcast_ss(&intensityBin[(colSize)*row_i + (4) * col_i + 3]);
 
     // these all start out to be 0
+    // cout << "row i: " << row_i << "\tcol_i: " << col_i << endl;
     // cout << "row 0: " << (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 0 * rowSize) << endl;
     // cout << "row 1: " << (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 1 * rowSize) << endl;
     // cout << "row 2: " << (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 2 * rowSize) << endl;
     // cout << "row 3: " << (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 3 * rowSize) << endl;
+    cout << "row i: " << row_i << "\tcol_i: " << col_i << endl;
+    cout << "row 0: " << (((4) * (colSize)*row_i) + ((4) * col_i) + 0 * colSize) << endl;
+    cout << "row 1: " << (((4) * (colSize)*row_i) + ((4) * col_i) + 1 * colSize) << endl;
+    cout << "row 2: " << (((4) * (colSize)*row_i) + ((4) * col_i) + 2 * colSize) << endl;
+    cout << "row 3: " << (((4) * (colSize)*row_i) + ((4) * col_i) + 3 * colSize) << endl;
     cout << endl;
-    Rrow0 = _mm_load_ps(intensityRout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 0 * rowSize));
-    Grow0 = _mm_load_ps(intensityGout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 0 * rowSize));
-    Brow0 = _mm_load_ps(intensityBout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 0 * rowSize));
 
-    Rrow1 = _mm_load_ps(intensityRout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 1 * rowSize));
-    Grow1 = _mm_load_ps(intensityGout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 1 * rowSize));
-    Brow1 = _mm_load_ps(intensityBout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 1 * rowSize));
+    Rrow0 = _mm_load_ps(intensityRout + (((4) * (colSize)*row_i) + ((4) * col_i) + 0 * colSize));
+    Grow0 = _mm_load_ps(intensityGout + (((4) * (colSize)*row_i) + ((4) * col_i) + 0 * colSize));
+    Brow0 = _mm_load_ps(intensityBout + (((4) * (colSize)*row_i) + ((4) * col_i) + 0 * colSize));
 
-    Rrow2 = _mm_load_ps(intensityRout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 2 * rowSize));
-    Grow2 = _mm_load_ps(intensityGout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 2 * rowSize));
-    Brow2 = _mm_load_ps(intensityBout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 2 * rowSize));
+    Rrow1 = _mm_load_ps(intensityRout + (((4) * (colSize)*row_i) + ((4) * col_i) + 1 * colSize));
+    Grow1 = _mm_load_ps(intensityGout + (((4) * (colSize)*row_i) + ((4) * col_i) + 1 * colSize));
+    Brow1 = _mm_load_ps(intensityBout + (((4) * (colSize)*row_i) + ((4) * col_i) + 1 * colSize));
 
-    Rrow3 = _mm_load_ps(intensityRout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 3 * rowSize));
-    Grow3 = _mm_load_ps(intensityGout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 3 * rowSize));
-    Brow3 = _mm_load_ps(intensityBout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 3 * rowSize));
+    Rrow2 = _mm_load_ps(intensityRout + (((4) * (colSize)*row_i) + ((4) * col_i) + 2 * colSize));
+    Grow2 = _mm_load_ps(intensityGout + (((4) * (colSize)*row_i) + ((4) * col_i) + 2 * colSize));
+    Brow2 = _mm_load_ps(intensityBout + (((4) * (colSize)*row_i) + ((4) * col_i) + 2 * colSize));
+
+    Rrow3 = _mm_load_ps(intensityRout + (((4) * (colSize)*row_i) + ((4) * col_i) + 3 * colSize));
+    Grow3 = _mm_load_ps(intensityGout + (((4) * (colSize)*row_i) + ((4) * col_i) + 3 * colSize));
+    Brow3 = _mm_load_ps(intensityBout + (((4) * (colSize)*row_i) + ((4) * col_i) + 3 * colSize));
 
     // load in coefficients for row 0
     AC = _mm_load_ps(coefficients + 0);
@@ -284,9 +280,9 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     Brow0 = _mm_fmadd_ps(BQ22, BD, Brow0);
 
     // store in to output matrix
-    _mm_store_ps(intensityRout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 0 * rowSize), Rrow0);
-    _mm_store_ps(intensityGout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 0 * rowSize), Grow0);
-    _mm_store_ps(intensityBout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 0 * rowSize), Brow0);
+    _mm_store_ps(intensityRout + (((4) * (colSize)*row_i) + ((4) * col_i) + 0 * colSize), Rrow0);
+    _mm_store_ps(intensityGout + (((4) * (colSize)*row_i) + ((4) * col_i) + 0 * colSize), Grow0);
+    _mm_store_ps(intensityBout + (((4) * (colSize)*row_i) + ((4) * col_i) + 0 * colSize), Brow0);
 
     // load in coefficients for row 1
     AC = _mm_load_ps(coefficients + 16);
@@ -311,9 +307,9 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     Brow1 = _mm_fmadd_ps(BQ22, BD, Brow1);
 
     // store in to output matrix
-    _mm_store_ps(intensityRout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 1 * rowSize), Rrow1);
-    _mm_store_ps(intensityGout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 1 * rowSize), Grow1);
-    _mm_store_ps(intensityBout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 1 * rowSize), Brow1);
+    _mm_store_ps(intensityRout + (((4) * (colSize)*row_i) + ((4) * col_i) + 1 * colSize), Rrow1);
+    _mm_store_ps(intensityGout + (((4) * (colSize)*row_i) + ((4) * col_i) + 1 * colSize), Grow1);
+    _mm_store_ps(intensityBout + (((4) * (colSize)*row_i) + ((4) * col_i) + 1 * colSize), Brow1);
 
     // load in coefficients for row 2
     AC = _mm_load_ps(coefficients + 32);
@@ -338,9 +334,9 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     Brow2 = _mm_fmadd_ps(BQ22, BD, Brow2);
 
     // store in to output matrix
-    _mm_store_ps(intensityRout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 2 * rowSize), Rrow2);
-    _mm_store_ps(intensityGout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 2 * rowSize), Grow2);
-    _mm_store_ps(intensityBout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 2 * rowSize), Brow2);
+    _mm_store_ps(intensityRout + (((4) * (colSize)*row_i) + ((4) * col_i) + 2 * colSize), Rrow2);
+    _mm_store_ps(intensityGout + (((4) * (colSize)*row_i) + ((4) * col_i) + 2 * colSize), Grow2);
+    _mm_store_ps(intensityBout + (((4) * (colSize)*row_i) + ((4) * col_i) + 2 * colSize), Brow2);
 
     // load in coefficients for row 3
     AC = _mm_load_ps(coefficients + 48);
@@ -365,9 +361,9 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     Brow3 = _mm_fmadd_ps(BQ22, BD, Brow3);
 
     // store in to output matrix
-    _mm_store_ps(intensityRout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 3 * rowSize), Rrow3);
-    _mm_store_ps(intensityGout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 3 * rowSize), Grow3);
-    _mm_store_ps(intensityBout + (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 3 * rowSize), Brow3);
+    _mm_store_ps(intensityRout + (((4) * (colSize)*row_i) + ((4) * col_i) + 3 * colSize), Rrow3);
+    _mm_store_ps(intensityGout + (((4) * (colSize)*row_i) + ((4) * col_i) + 3 * colSize), Grow3);
+    _mm_store_ps(intensityBout + (((4) * (colSize)*row_i) + ((4) * col_i) + 3 * colSize), Brow3);
 }
 
 int main(int argc, char **argv)
@@ -376,8 +372,8 @@ int main(int argc, char **argv)
     // kernel width
     // int outputRowSize = 1280;
     // int outputColumnSize = 960;
-    int outputRowSize = 8;
-    int outputColumnSize = 8;
+    int outputRowSize = ROWS * 2;
+    int outputColumnSize = COLS * 2;
     int inputIndex, outputRow, outputColumn, outputIndex;
 
     // Output Image Stack defintion
@@ -397,12 +393,12 @@ int main(int argc, char **argv)
     strcpy(AfileName, home);
     // strcat(AfileName, "inputs/640x480.jpg");
     strcat(AfileName, "inputs/8x8.jpg");
-    cout << "before decode" << endl;
+    // cout << "before decode" << endl;
     decodeImage(inputImageR, inputImageG, inputImageB, AfileName);
 
     for (int i = 0; i < ROWS * COLS; i++)
     {
-        if (i % 4 == 0)
+        if (i % COLS == 0)
         {
             cout << endl;
         }
@@ -416,24 +412,25 @@ int main(int argc, char **argv)
     t0 = rdtsc();
     // generate coefficients
 
-    for (int col_i = 0; col_i < COLS / 2; col_i++)
+    for (int row_i = 0; row_i < outputRowSize / 4; row_i++)
     {
-        for (int row_i = 0; row_i < ROWS / 2; row_i++)
+        for (int col_i = 0; col_i < outputColumnSize / 4; col_i++)
         {
-            kernel(inputImageR, inputImageG, inputImageB, outputR, outputG, outputB, row_i, col_i, coefficients, 2 * ROWS, 2 * COLS);
+            kernel(inputImageR, inputImageG, inputImageB, outputR, outputG, outputB, row_i, col_i, coefficients, outputRowSize, outputColumnSize);
         }
     }
 
-    for (int i = 0; i < ROWS * COLS * 4; i++)
+    for (int i = 0; i < outputRowSize * outputColumnSize; i++)
     {
-        if (i % (2 * COLS) == 0)
+        if (i % (outputRowSize * outputColumnSize / 4) == 0)
         {
             cout << endl;
         }
         cout << outputR[i] << "\t";
     }
-    // kernel(inputImageR, inputImageG, inputImageB, outputR, outputG, outputB, coefficients, rowSize);
+
     t1 = rdtsc();
+    cout << endl;
     printf("cycles taken (I think): %f\n", ((double)(t1 - t0) * MAX_FREQ / BASE_FREQ));
 
     char BfileName[100];
@@ -441,33 +438,7 @@ int main(int argc, char **argv)
     strcat(BfileName, "results/bl/my/8x8-16x16.jpg");
 
     encodeImage(outputR, outputG, outputB, BfileName);
-    // cout << "R=========================\n";
-    // for (int i = 0; i < outputColumnSize*outputRowSize;)
-    // {
-    //     for (int j = 0; j < outputRowSize; j++)
-    //     {
-    //         cout << outputR[i++] << '\t';
-    //     }
-    //     cout << '\n';
-    // }
-    // cout << "G=========================\n";
-    // for (int i = 0; i < outputColumnSize*outputRowSize;)
-    // {
-    //     for (int j = 0; j < outputRowSize; j++)
-    //     {
-    //         cout << outputG[i++] << '\t';
-    //     }
-    //     cout << '\n';
-    // }
-    // cout << "B=========================\n";
-    // for (int i = 0; i < outputColumnSize*outputRowSize;)
-    // {
-    //     for (int j = 0; j < outputRowSize; j++)
-    //     {
-    //         cout << outputB[i++] << '\t';
-    //     }
-    //     cout << '\n';
-    // }
+
     free(coefficients);
     free(outputR);
     free(outputG);
