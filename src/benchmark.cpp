@@ -15,16 +15,17 @@ static __inline__ unsigned long long rdtsc(void)
 }
 
 #define NUM_OF_IMAGES 1
-#define NUM_OF_IMAGE_CONVERSIONS 1
+#define NUM_OF_IMAGE_CONVERSIONS 2
 #define WINDOWSIZE 2
+// mode is either INTER_LINEAR or INTER_NEAREST
+#define MODE INTER_LINEAR
 char *home = "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/";
 
-int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB, char *fileName)
+int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB, const char *fileName)
 {
 	int i, j, index = 0;
 	float *tmpBuffer;
 	// READ IMAGE and Init buffers
-	// const char *fileName = "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/inputs/640x480.jpg";
 	Mat fullImage;
 	Mat windowImage;
 	Mat channels[3];
@@ -34,9 +35,6 @@ int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB, char
 	int imageCols = (int)fullImage.cols;
 	cout << "Width : " << imageCols << endl;
 	cout << "Height: " << imageRows << endl;
-	// inputImageR = (float *)calloc(fullImage.cols * fullImage.rows, sizeof(float));
-	// inputImageG = (float *)calloc(fullImage.cols * fullImage.rows, sizeof(float));
-	// inputImageB = (float *)calloc(fullImage.cols * fullImage.rows, sizeof(float));
 
 	for (i = 0; i + WINDOWSIZE <= imageRows; i = i + WINDOWSIZE)
 	{
@@ -61,132 +59,126 @@ int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB, char
 
 int main(int argc, char **argv)
 {
-	// Mat images[4];
 	Mat images[1];
-	Mat image, result;
-	float count = 0, percentage;
-	int compareCount = 0;
+	Mat image;
+
 	// char *fileNames[NUM_OF_IMAGES] = {
 	// 	"/afs/ece.cmu.edu/usr/arexhari/Public/645-project/inputs/640x480.jpg",
 	// 	"/afs/ece.cmu.edu/usr/arexhari/Public/645-project/inputs/1920x1440.jpg",
 	// 	"/afs/ece.cmu.edu/usr/arexhari/Public/645-project/inputs/2400x1800.jpg",
 	// 	"/afs/ece.cmu.edu/usr/arexhari/Public/645-project/inputs/4008x3006.jpg"};
 	char *fileNames[NUM_OF_IMAGES] = {
-		"/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/inputs/8x8.jpg"};
+		"/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/inputs/640x480.jpg"};
 	for (int i = 0; i < NUM_OF_IMAGES; i++)
 	{
 		images[i] = imread(fileNames[i]);
 	}
-	// int fileSizes[NUM_OF_IMAGE_CONVERSIONS][2] = {
-	// 	{480, 640},
-	// 	{960, 1280},
-	// 	{1440, 1920},
-	// 	{1800, 2400},
-	// 	{3006, 4008},
-	// 	{6012, 8004},
-	// 	{12042, 16008},
-	// };
-	int fileSizes[NUM_OF_IMAGE_CONVERSIONS][2] = {
-		{16, 16},
-	};
-	// for (int i = 0; i < NUM_OF_IMAGES; i++)
-	// {
-	// 	compareCount = 0;
-	// 	for (int j = i + 1; j < NUM_OF_IMAGE_CONVERSIONS; j++)
-	// 	{
-	// image = images[i];
-	image = imread("/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/inputs/8x8.jpg");
-	// int down_width = fileSizes[j][1];
-	// int down_height = fileSizes[j][0];
-	int down_width = 16;
-	int down_height = 16;
-	Mat resized_down;
-	unsigned long long startTime;
-	unsigned long long endTime;
-	startTime = rdtsc();
-	// resize(image, resized_down, Size(down_width, down_height), INTER_LINEAR);
-	resize(image, resized_down, Size(down_width, down_height), INTER_NEAREST);
-	// Resizing the image - benchmark part
-	endTime = rdtsc() - startTime;
-	std::ostringstream oss;
+	int upscalingMultipliers[NUM_OF_IMAGE_CONVERSIONS] = {2, 4};
 
-	// oss << home << "results/bl/cv/" << image.cols << "x" << image.rows << "-" << fileSizes[j][1] << "x" << fileSizes[j][0] << ".jpg";
-	// std::string var = oss.str();
-	// cout << image.rows << "," << fileSizes[j][0] << "," << endTime << "\n";
-	// imwrite(var, resized_down);
-	imwrite("/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/results/nn/cv/8x8-16x16.jpg", resized_down);
-	// 	}
-	// }
-
-	// validate that the output for openCV and our algorithm are the same
-	// read in input 2x2 pixels
-	// float *AinputImageR = (float *)calloc(1280 * 960, sizeof(float));
-	// float *AinputImageG = (float *)calloc(1280 * 960, sizeof(float));
-	// float *AinputImageB = (float *)calloc(1280 * 960, sizeof(float));
-	float *AinputImageR = (float *)calloc(16 * 16, sizeof(float));
-	float *AinputImageG = (float *)calloc(16 * 16, sizeof(float));
-	float *AinputImageB = (float *)calloc(16 * 16, sizeof(float));
-	char AfileName[100];
-	strcpy(AfileName, home);
-	// strcat(AfileName, "results/bl/my/640x480-1280x960.jpg");
-	strcat(AfileName, "results/nn/my/8x8-16x16.jpg");
-
-	cout << AfileName << endl;
-	decodeImage(AinputImageR, AinputImageG, AinputImageB, AfileName);
-
-	// float *BinputImageR = (float *)calloc(1280 * 960, sizeof(float));
-	// float *BinputImageG = (float *)calloc(1280 * 960, sizeof(float));
-	// float *BinputImageB = (float *)calloc(1280 * 960, sizeof(float));
-	float *BinputImageR = (float *)calloc(16 * 16, sizeof(float));
-	float *BinputImageG = (float *)calloc(16 * 16, sizeof(float));
-	float *BinputImageB = (float *)calloc(16 * 16, sizeof(float));
-	char BfileName[100];
-	strcpy(BfileName, home);
-	// strcat(BfileName, "results/bl/cv/640x480-1280x960.jpg");
-	strcat(BfileName, "results/nn/cv/8x8-16x16.jpg");
-
-	cout << BfileName << endl;
-	decodeImage(BinputImageR, BinputImageG, BinputImageB, BfileName);
-
-	bool correct = true;
-	for (int i = 0; i < 16 * 16; i++)
+	for (int i = 0; i < NUM_OF_IMAGES; i++)
 	{
-		if (i % 16 == 0)
+
+		for (int j = 0; j < NUM_OF_IMAGE_CONVERSIONS; j++)
 		{
+			unsigned long long startTime;
+			unsigned long long endTime;
+			Mat processedImage;
+
+			image = images[i];
+			int inWidth = image.cols;
+			int inHeight = image.rows;
+			int outWidth = upscalingMultipliers[j] * inWidth;
+			int outHeight = upscalingMultipliers[j] * inHeight;
+
+			startTime = rdtsc();
+			resize(image, processedImage, Size(inWidth, inHeight), MODE);
+			endTime = rdtsc();
+
+			std::ostringstream oss;
+			std::ostringstream oss2;
+
+			if (MODE == INTER_LINEAR)
+			{
+				oss << home << "results/bl/cv/" << inWidth << "x" << inHeight << "-" << outWidth << "x" << outHeight << ".jpg";
+			}
+			else if (MODE == INTER_NEAREST)
+			{
+				oss << home << "results/nn/cv/" << inWidth << "x" << inHeight << "-" << outWidth << "x" << outHeight << ".jpg";
+			}
+			else
+			{
+				cout << "Invalid MODE. Only supported modes are INTER_LINEAR and INTER_NEAREST" << endl;
+			}
+			std::string outPath = oss.str();
+			imwrite(outPath, processedImage);
+
+			// validate that the output for openCV and our algorithm are the same
+			float *AinputImageR = (float *)calloc(outWidth * outHeight, sizeof(float));
+			float *AinputImageG = (float *)calloc(outWidth * outHeight, sizeof(float));
+			float *AinputImageB = (float *)calloc(outWidth * outHeight, sizeof(float));
+
+			std::string AfileName = oss.str();
+
+			cout << AfileName << endl;
+
+			decodeImage(AinputImageR, AinputImageG, AinputImageB, AfileName.c_str());
+
+			float *BinputImageR = (float *)calloc(outWidth * outHeight, sizeof(float));
+			float *BinputImageG = (float *)calloc(outWidth * outHeight, sizeof(float));
+			float *BinputImageB = (float *)calloc(outWidth * outHeight, sizeof(float));
+
+			if (MODE == INTER_LINEAR)
+			{
+				oss2 << home << "results/bl/my/" << inWidth << "x" << inHeight << "-" << outWidth << "x" << outHeight << ".jpg";
+			}
+			else if (MODE == INTER_NEAREST)
+			{
+				oss2 << home << "results/nn/my/" << inWidth << "x" << inHeight << "-" << outWidth << "x" << outHeight << ".jpg";
+			}
+			else
+			{
+				cout << "Invalid MODE. Only supported modes are INTER_LINEAR and INTER_NEAREST" << endl;
+			}
+
+			std::string BfileName = oss2.str().c_str();
+
+			cout << BfileName << endl;
+
+			decodeImage(BinputImageR, BinputImageG, BinputImageB, BfileName.c_str());
+
+			bool correct = true;
+			for (int i = 0; i < outWidth * outHeight; i++)
+			{
+				if (i % outWidth == 0)
+				{
+					// cout << endl;
+				}
+				// cout << abs(AinputImageR[i] - BinputImageR[i]) << "\t";
+
+				if (abs(AinputImageR[i] - BinputImageR[i]) > 25)
+				{
+					correct = false;
+				}
+			}
+			cout << endl;
+			if (correct)
+			{
+				cout << "images " << endl
+					 << AfileName << " and " << endl
+					 << BfileName << endl
+					 << "are the same" << endl;
+			}
+			else
+			{
+				cout << "images " << endl
+					 << AfileName << " and " << endl
+					 << BfileName << endl
+					 << "are not the same" << endl;
+			}
 			cout << endl;
 		}
-		// if (abs(AinputImageR[i] - BinputImageR[i]) > 0.1)
-		// {
-		// correct = false;
-		cout << abs(AinputImageR[i] - BinputImageR[i]) << "\t";
-		// cout << "image A and B are not the same" << endl;
-		// break;
-		// }
-		// if (abs(AinputImageG[i] - BinputImageG[i]) > 0.1)
-		// {
-		// correct = false;
-		// cout << abs(AinputImageG[i] - BinputImageG[i]) << "\t";
-		// cout <<  abs(AinputImageR[i] - BinputImageR[i]) << "\t";
-		// cout << "image A and B are not the same" << endl;
-		// break;
-		// }
-		// if (abs(AinputImageB[i] - BinputImageB[i]) > 0.1)
-		// {
-		// 	correct = false;
-		// cout << abs(AinputImageB[i] - BinputImageB[i]) << "\t";
-		// cout << "image A and B are not the same" << endl;
-		// break;
-		// }
+		cout << endl;
 	}
-	cout << endl;
-	// if (correct)
-	// {
-	// 	cout << "images A and B are the same" << endl;
-	// }
-	// else
-	// {
-	// 	cout << "images A and B are not the same" << endl;
-	// }
 
 	return 0;
 }

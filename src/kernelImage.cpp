@@ -14,10 +14,22 @@ using namespace std;
 
 #define MAX_FREQ 3.2
 #define BASE_FREQ 2.4
-#define WINDOWSIZE 2
 
-#define ROWS 8
-#define COLS 8
+#define NUM_OF_IMAGES 2
+#define NUM_OF_IMAGE_CONVERSIONS 1
+#define WINDOWSIZE 2
+// mode is either INTER_LINEAR or INTER_NEAREST
+#define MODE INTER_LINEAR
+char *home = "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/";
+// 	"/afs/ece.cmu.edu/usr/arexhari/Public/645-project/inputs/640x480.jpg",
+//
+// 	"/afs/ece.cmu.edu/usr/arexhari/Public/645-project/inputs/2400x1800.jpg",
+// 	"/afs/ece.cmu.edu/usr/arexhari/Public/645-project/inputs/4008x3006.jpg"};
+char *fileNames[NUM_OF_IMAGES] = {
+    "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/inputs/640x480.jpg",
+    "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/inputs/1920x1440.jpg"};
+
+int upscalingMultipliers[NUM_OF_IMAGE_CONVERSIONS] = {2};
 
 // timing routine for reading the time stamp counter
 static __inline__ unsigned long long rdtsc(void)
@@ -27,14 +39,12 @@ static __inline__ unsigned long long rdtsc(void)
                          : "=a"(lo), "=d"(hi));
     return ((unsigned long long)lo) | (((unsigned long long)hi) << 32);
 }
-char *home = "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/";
 
-int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB, char *fileName)
+int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB, const char *fileName)
 {
     int i, j, index = 0;
     float *tmpBuffer;
     // READ IMAGE and Init buffers
-    // const char *fileName = "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/inputs/640x480.jpg";
     Mat fullImage;
     Mat windowImage;
     Mat channels[3];
@@ -44,9 +54,6 @@ int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB, char
     int imageCols = (int)fullImage.cols;
     cout << "Width : " << imageCols << endl;
     cout << "Height: " << imageRows << endl;
-    // inputImageR = (float *)calloc(fullImage.cols * fullImage.rows, sizeof(float));
-    // inputImageG = (float *)calloc(fullImage.cols * fullImage.rows, sizeof(float));
-    // inputImageB = (float *)calloc(fullImage.cols * fullImage.rows, sizeof(float));
 
     for (i = 0; i + WINDOWSIZE <= imageRows; i = i + WINDOWSIZE)
     {
@@ -69,27 +76,21 @@ int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB, char
     return 0;
 }
 
-int encodeImage(float *outputR, float *outputG, float *outputB, char *fileName)
+int encodeImage(float *outputR, float *outputG, float *outputB, const char *fileName, int outWidth, int outHeight)
 {
-    // const char *fileName = "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/results/640x480-bl.jpg";
     vector<Mat> channels;
     Mat finalImage;
     Mat out;
-    // cv::Mat matR = cv::Mat(480 * 2, 640 * 2, CV_32F, outputR);
-    // cv::Mat matG = cv::Mat(480 * 2, 640 * 2, CV_32F, outputG);
-    // cv::Mat matB = cv::Mat(480 * 2, 640 * 2, CV_32F, outputB);
-    cv::Mat matR = cv::Mat(ROWS * 2, COLS * 2, CV_32F, outputR);
-    cv::Mat matG = cv::Mat(ROWS * 2, COLS * 2, CV_32F, outputG);
-    cv::Mat matB = cv::Mat(ROWS * 2, COLS * 2, CV_32F, outputB);
+    cv::Mat matR = cv::Mat(outHeight, outWidth, CV_32F, outputR);
+    cv::Mat matG = cv::Mat(outHeight, outWidth, CV_32F, outputG);
+    cv::Mat matB = cv::Mat(outHeight, outWidth, CV_32F, outputB);
 
     channels.push_back(matB);
     channels.push_back(matG);
     channels.push_back(matR);
 
     merge(channels, finalImage);
-    // transpose(finalImage, out);
     imwrite(fileName, finalImage);
-    // imwrite(fileName, out);
 }
 
 void generateCoefficients(float *coefficients)
@@ -100,34 +101,17 @@ void generateCoefficients(float *coefficients)
     */
 
     __m128 vec1, vec2, vec3, vec4;
-    /*
-        a1*c, a2*c, a3*c, a4*c
-        a1*d, a2*d, a3*d, a4*d
-        b1*c, b2*c, b3*c, b4*c
-        b1*d, b2*d, b3*d, b4*d
-    */
-
-    // float vec1flt[4] = {0.0 / 9.0, 3.0 / 9.0, 6.0 / 9.0, 9.0 / 9.0};
-    // float vec2flt[4] = {9.0 / 9.0, 6.0 / 9.0, 3.0 / 3.0, 0.0 / 9.0};
-    // float vec3flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec4flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
 
     float vec1flt[4] = {9.0 / 9.0, 6.0 / 9.0, 3.0 / 9.0, 0.0 / 9.0};
     float vec2flt[4] = {0.0 / 9.0, 3.0 / 9.0, 6.0 / 3.0, 9.0 / 9.0};
     float vec3flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
     float vec4flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec1flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec2flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec3flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec4flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
+
     vec1 = _mm_load_ps(vec1flt);
     vec2 = _mm_load_ps(vec2flt);
     vec3 = _mm_load_ps(vec3flt);
     vec4 = _mm_load_ps(vec4flt);
-    // vec1 = _mm_set_ps(0, 1/3.0, 2/3.0, 1); //z*a1*c
-    // vec2 = _mm_set_ps(0, 2/9.0, 4/9.0, 6/9.0); //z*a2*c
-    // vec3 = _mm_set_ps(0, 1/9.0, 2/9.0, 3/9.0); //z*a3*c
-    // vec4 = _mm_set_ps(0, 0, 0, 0); //z*a4*c
+
     _mm_store_ps(coefficients, vec1);
     _mm_store_ps(coefficients + 4, vec2);
     _mm_store_ps(coefficients + 8, vec3);
@@ -137,18 +121,12 @@ void generateCoefficients(float *coefficients)
     float vec6flt[4] = {0.0 / 9.0, 2.0 / 9.0, 4.0 / 9.0, 6.0 / 9.0};
     float vec7flt[4] = {3.0 / 9.0, 2.0 / 9.0, 1.0 / 9.0, 0.0 / 9.0};
     float vec8flt[4] = {0.0 / 9.0, 1.0 / 9.0, 2.0 / 9.0, 3.0 / 9.0};
-    // float vec5flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec6flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec7flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec8flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
+
     vec1 = _mm_load_ps(vec5flt);
     vec2 = _mm_load_ps(vec6flt);
     vec3 = _mm_load_ps(vec7flt);
     vec4 = _mm_load_ps(vec8flt);
-    // vec1 = _mm_set_ps(1, 2 / 3.0, 1 / 3.0, 0);       // z*a1*d
-    // vec2 = _mm_set_ps(6 / 9.0, 4 / 9.0, 2 / 9.0, 0); // z*a2*d
-    // vec3 = _mm_set_ps(3 / 9.0, 2 / 9.0, 1 / 9.0, 0); // z*a3*d
-    // vec4 = _mm_set_ps(0, 0, 0, 0);                   // z*a4*c
+
     _mm_store_ps(coefficients + 16, vec1);
     _mm_store_ps(coefficients + 20, vec2);
     _mm_store_ps(coefficients + 24, vec3);
@@ -158,18 +136,12 @@ void generateCoefficients(float *coefficients)
     float vec10flt[4] = {0.0 / 9.0, 1.0 / 9.0, 2.0 / 9.0, 3.0 / 9.0};
     float vec11flt[4] = {6.0 / 9.0, 4.0 / 9.0, 2.0 / 4.0, 0.0 / 9.0};
     float vec12flt[4] = {0.0 / 9.0, 2.0 / 4.0, 4.0 / 9.0, 6.0 / 9.0};
-    // float vec9flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec10flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec11flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec12flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
+
     vec1 = _mm_load_ps(vec9flt);
     vec2 = _mm_load_ps(vec10flt);
     vec3 = _mm_load_ps(vec11flt);
     vec4 = _mm_load_ps(vec12flt);
-    // vec4 = _mm_set_ps(0, 1 / 3.0, 2 / 3.0, 1);       // z*b4*c
-    // vec3 = _mm_set_ps(0, 2 / 9.0, 4 / 9.0, 6 / 9.0); // z*b3*c
-    // vec2 = _mm_set_ps(0, 1 / 9.0, 2 / 9.0, 3 / 9.0); // z*b2*c
-    // vec1 = _mm_set_ps(0, 0, 0, 0);                   // z*b1*c
+
     _mm_store_ps(coefficients + 32, vec1);
     _mm_store_ps(coefficients + 36, vec2);
     _mm_store_ps(coefficients + 40, vec3);
@@ -179,26 +151,19 @@ void generateCoefficients(float *coefficients)
     float vec14flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
     float vec15flt[4] = {9.0 / 9.0, 6.0 / 9.0, 3.0 / 9.0, 0.0 / 9.0};
     float vec16flt[4] = {0.0 / 9.0, 3.0 / 9.0, 6.0 / 9.0, 9.0 / 9.0};
-    // float vec13flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec14flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec15flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
-    // float vec16flt[4] = {0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0, 0.0 / 9.0};
+
     vec1 = _mm_load_ps(vec13flt);
     vec2 = _mm_load_ps(vec14flt);
     vec3 = _mm_load_ps(vec15flt);
     vec4 = _mm_load_ps(vec16flt);
 
-    // vec4 = _mm_set_ps(1.0, 2 / 3.0, 1 / 3.0, 0.0);     // z*b4*d
-    // vec3 = _mm_set_ps(6 / 9.0, 4 / 9.0, 2 / 9.0, 0.0); // z*b3*d
-    // vec2 = _mm_set_ps(3 / 9.0, 2 / 9.0, 1 / 9.0, 0.0); // z*b2*d
-    // vec1 = _mm_set_ps(0.0, 0.0, 0.0, 0.0);             // z*b1*d
     _mm_store_ps(coefficients + 48, vec1);
     _mm_store_ps(coefficients + 52, vec2);
     _mm_store_ps(coefficients + 56, vec3);
     _mm_store_ps(coefficients + 60, vec4);
 }
 
-void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float *intensityRout, float *intensityGout, float *intensityBout, int row_i, int col_i, float *coefficients, int rowSize, int colSize)
+void kernel(const float *intensityRin, const float *intensityGin, const float *intensityBin, float *intensityRout, float *intensityGout, float *intensityBout, int row_i, int col_i, const float *coefficients, int rowSize, int colSize)
 {
 
     __m128 RQ11, RQ21, RQ12, RQ22;
@@ -211,8 +176,6 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
 
     __m128 AC, AD, BC, BD;
 
-    // same for all pixels in matrix
-    cout << "input indecies: " << (colSize * row_i) + (4) * col_i + 0 << endl;
     RQ11 = _mm_broadcast_ss(&intensityRin[(colSize)*row_i + (4) * col_i + 0]);
     RQ21 = _mm_broadcast_ss(&intensityRin[(colSize)*row_i + (4) * col_i + 1]);
     RQ12 = _mm_broadcast_ss(&intensityRin[(colSize)*row_i + (4) * col_i + 2]);
@@ -227,19 +190,6 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     BQ21 = _mm_broadcast_ss(&intensityBin[(colSize)*row_i + (4) * col_i + 1]);
     BQ12 = _mm_broadcast_ss(&intensityBin[(colSize)*row_i + (4) * col_i + 2]);
     BQ22 = _mm_broadcast_ss(&intensityBin[(colSize)*row_i + (4) * col_i + 3]);
-
-    // these all start out to be 0
-    // cout << "row i: " << row_i << "\tcol_i: " << col_i << endl;
-    // cout << "row 0: " << (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 0 * rowSize) << endl;
-    // cout << "row 1: " << (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 1 * rowSize) << endl;
-    // cout << "row 2: " << (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 2 * rowSize) << endl;
-    // cout << "row 3: " << (((rowSize / 2) * (colSize / 2) * 2 * row_i) + ((rowSize / 2) * col_i) + 3 * rowSize) << endl;
-    cout << "row i: " << row_i << "\tcol_i: " << col_i << endl;
-    cout << "row 0: " << (((4) * (colSize)*row_i) + ((4) * col_i) + 0 * colSize) << endl;
-    cout << "row 1: " << (((4) * (colSize)*row_i) + ((4) * col_i) + 1 * colSize) << endl;
-    cout << "row 2: " << (((4) * (colSize)*row_i) + ((4) * col_i) + 2 * colSize) << endl;
-    cout << "row 3: " << (((4) * (colSize)*row_i) + ((4) * col_i) + 3 * colSize) << endl;
-    cout << endl;
 
     Rrow0 = _mm_load_ps(intensityRout + (((4) * (colSize)*row_i) + ((4) * col_i) + 0 * colSize));
     Grow0 = _mm_load_ps(intensityGout + (((4) * (colSize)*row_i) + ((4) * col_i) + 0 * colSize));
@@ -368,79 +318,94 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
 
 int main(int argc, char **argv)
 {
-    unsigned long long t0, t1;
-    // kernel width
-    // int outputRowSize = 1280;
-    // int outputColumnSize = 960;
-    int outputRowSize = ROWS * 2;
-    int outputColumnSize = COLS * 2;
-    int inputIndex, outputRow, outputColumn, outputIndex;
+    unsigned long long startTime;
+    unsigned long long endTime;
 
-    // Output Image Stack defintion
-    float *outputR = (float *)calloc(outputRowSize * outputColumnSize, sizeof(float));
-    float *outputG = (float *)calloc(outputRowSize * outputColumnSize, sizeof(float));
-    float *outputB = (float *)calloc(outputRowSize * outputColumnSize, sizeof(float));
+    Mat images[1];
+    Mat image;
 
-    // read in input 2x2 pixels
-    // float *inputImageR = (float *)calloc(640 * 480, sizeof(float));
-    // float *inputImageG = (float *)calloc(640 * 480, sizeof(float));
-    // float *inputImageB = (float *)calloc(640 * 480, sizeof(float));
-    float *inputImageR = (float *)calloc(ROWS * COLS, sizeof(float));
-    float *inputImageG = (float *)calloc(ROWS * COLS, sizeof(float));
-    float *inputImageB = (float *)calloc(ROWS * COLS, sizeof(float));
-
-    char AfileName[100];
-    strcpy(AfileName, home);
-    // strcat(AfileName, "inputs/640x480.jpg");
-    strcat(AfileName, "inputs/8x8.jpg");
-    // cout << "before decode" << endl;
-    decodeImage(inputImageR, inputImageG, inputImageB, AfileName);
-
-    for (int i = 0; i < ROWS * COLS; i++)
+    for (int i = 0; i < NUM_OF_IMAGES; i++)
     {
-        if (i % COLS == 0)
-        {
-            cout << endl;
-        }
-        cout << inputImageR[i] << "\t";
+        images[i] = imread(fileNames[i]);
     }
 
-    cout << endl;
     float *coefficients = (float *)calloc(4 * 4 * 4, sizeof(float));
     generateCoefficients(coefficients);
 
-    t0 = rdtsc();
-    // generate coefficients
-
-    for (int row_i = 0; row_i < outputRowSize / 4; row_i++)
+    for (int i = 0; i < NUM_OF_IMAGES; i++)
     {
-        for (int col_i = 0; col_i < outputColumnSize / 4; col_i++)
+        image = images[i];
+        int inWidth = image.cols;
+        int inHeight = image.rows;
+
+        float *inputImageR = (float *)calloc(inHeight * inWidth, sizeof(float));
+        float *inputImageG = (float *)calloc(inHeight * inWidth, sizeof(float));
+        float *inputImageB = (float *)calloc(inHeight * inWidth, sizeof(float));
+
+        cout << "input: " << fileNames[i] << endl;
+        decodeImage(inputImageR, inputImageB, inputImageG, fileNames[i]);
+
+        for (int j = 0; j < NUM_OF_IMAGE_CONVERSIONS; j++)
         {
-            kernel(inputImageR, inputImageG, inputImageB, outputR, outputG, outputB, row_i, col_i, coefficients, outputRowSize, outputColumnSize);
+
+            int outWidth = upscalingMultipliers[j] * inWidth;
+            int outHeight = upscalingMultipliers[j] * inHeight;
+
+            float *outputR = (float *)calloc(outHeight * outWidth, sizeof(float));
+            float *outputG = (float *)calloc(outHeight * outWidth, sizeof(float));
+            float *outputB = (float *)calloc(outHeight * outWidth, sizeof(float));
+
+            startTime = rdtsc();
+            for (int row_i = 0; row_i < outHeight / 4; row_i++)
+            {
+                // cout << row_i << endl;
+                for (int col_i = 0; col_i < outWidth / 4; col_i++)
+                {
+                    kernel(inputImageR, inputImageG, inputImageB, outputR, outputG, outputB, row_i, col_i, coefficients, outHeight, outWidth);
+                }
+            }
+            endTime = rdtsc();
+
+            // for (int i = 0; i < outHeight * outWidth; i++)
+            // {
+            //     if (i % (outHeight * outWidth / 4) == 0)
+            //     {
+            //         cout << endl;
+            //     }
+            //     cout << outputR[i] << "\t";
+            // }
+
+            std::ostringstream oss;
+            oss.str("");
+            oss.str().clear();
+
+            if (MODE == INTER_LINEAR)
+            {
+                oss << home << "results/bl/my/" << inWidth << "x" << inHeight << "-" << outWidth << "x" << outHeight << ".jpg";
+            }
+            else if (MODE == INTER_NEAREST)
+            {
+                oss << home << "results/nn/my/" << inWidth << "x" << inHeight << "-" << outWidth << "x" << outHeight << ".jpg";
+            }
+            else
+            {
+                cout << "Invalid MODE. Only supported modes are INTER_LINEAR and INTER_NEAREST" << endl;
+            }
+
+            std::string outPath = oss.str();
+            cout << "output: " << outPath << endl;
+            encodeImage(outputR, outputG, outputB, outPath.c_str(), outWidth, outHeight);
+            oss.str("");
+            oss.str().clear();
+            printf("cycles taken (I think): %f\n", ((double)(endTime - startTime) * MAX_FREQ / BASE_FREQ));
+
+            free(outputR);
+            free(outputG);
+            free(outputB);
         }
+        free(inputImageR);
+        free(inputImageG);
+        free(inputImageB);
     }
-
-    for (int i = 0; i < outputRowSize * outputColumnSize; i++)
-    {
-        if (i % (outputRowSize * outputColumnSize / 4) == 0)
-        {
-            cout << endl;
-        }
-        cout << outputR[i] << "\t";
-    }
-
-    t1 = rdtsc();
-    cout << endl;
-    printf("cycles taken (I think): %f\n", ((double)(t1 - t0) * MAX_FREQ / BASE_FREQ));
-
-    char BfileName[100];
-    strcpy(BfileName, home);
-    strcat(BfileName, "results/bl/my/8x8-16x16.jpg");
-
-    encodeImage(outputR, outputG, outputB, BfileName);
-
     free(coefficients);
-    free(outputR);
-    free(outputG);
-    free(outputB);
 }
