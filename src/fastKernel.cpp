@@ -14,12 +14,12 @@ using namespace std;
 
 #define MAX_FREQ 3.2
 #define BASE_FREQ 2.4
+#define WINDOWSIZE 2
 
 #define mask0  (0) | (0 << 2) | (0 << 4) | (0 << 6)
 #define mask1  (1) | (1 << 2) | (1 << 4) | (1 << 6)
 #define mask2  (2) | (2 << 2) | (2 << 4) | (2 << 6)
 #define mask3  (3) | (3 << 2) | (3 << 4) | (3 << 6)
-
 
 // timing routine for reading the time stamp counter
 static __inline__ unsigned long long rdtsc(void)
@@ -29,6 +29,61 @@ static __inline__ unsigned long long rdtsc(void)
                          : "=a"(lo), "=d"(hi));
     return ((unsigned long long)lo) | (((unsigned long long)hi) << 32);
 }
+
+int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB)
+{
+    int i, j, index = 0;
+    float *tmpBuffer;
+    // READ IMAGE and Init buffers
+    const char *fileName = "/afs/ece.cmu.edu/usr/arexhari/Public/645-project/inputs/640x480.jpg";
+    Mat fullImage, windowImage;
+    Mat channels[3];
+    std::vector<float> array;
+    fullImage = imread(fileName);
+    int imageRows = (int)fullImage.rows, imageCols = (int)fullImage.cols;
+    cout << "Width : " << imageCols << endl;
+    cout << "Height: " << imageRows << endl;
+    // inputImageR = (float *)calloc(fullImage.cols * fullImage.rows, sizeof(float));
+    // inputImageG = (float *)calloc(fullImage.cols * fullImage.rows, sizeof(float));
+    // inputImageB = (float *)calloc(fullImage.cols * fullImage.rows, sizeof(float));
+
+    for (i = 0; i + WINDOWSIZE <= imageRows; i = i + WINDOWSIZE)
+    {
+        for (j = 0; j + WINDOWSIZE <= imageCols; j = j + WINDOWSIZE)
+        {
+            windowImage = fullImage(Range(i, i + WINDOWSIZE), Range(j, j + WINDOWSIZE));
+            split(windowImage, channels);
+            array.assign(channels[0].datastart, channels[0].dataend);
+            tmpBuffer = &array[0];
+            memcpy(inputImageB + index, tmpBuffer, 4 * sizeof(float));
+            array.assign(channels[1].datastart, channels[1].dataend);
+            tmpBuffer = &array[0];
+            memcpy(inputImageG + index, tmpBuffer, 4 * sizeof(float));
+            array.assign(channels[2].datastart, channels[2].dataend);
+            tmpBuffer = &array[0];
+            memcpy(inputImageR + index, tmpBuffer, 4 * sizeof(float));
+            index = index + 4;
+        }
+    }
+    return 0;
+}
+
+int encodeImage(float *outputR, float *outputG, float *outputB){
+    const char *fileName = "/afs/ece.cmu.edu/usr/arexhari/Public/645-project/results/640x480-bl.jpg";
+    vector<Mat> channels;
+    Mat finalImage;
+    cv::Mat matR = cv::Mat(480*2, 640*2, CV_32F, outputR);
+    cv::Mat matG = cv::Mat(480*2, 640*2, CV_32F, outputG);
+    cv::Mat matB = cv::Mat(480*2, 640*2, CV_32F, outputB);
+
+    channels.push_back(matB);
+    channels.push_back(matG);
+    channels.push_back(matR);
+
+    merge(channels, finalImage);
+    imwrite(fileName, finalImage); 
+}
+
 
 void generateCoefficients(float *coefficients)
 {
@@ -198,12 +253,13 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     _mm_store_ps(intensityGout + (3 * rowSize), outGB); _mm_store_ps(intensityRout + (3 * rowSize), outRB); _mm_store_ps(intensityBout + (3 * rowSize), outBB);  
 }
 
+
 int main(int argc, char **argv)
 {
     unsigned long long t0, t1;
     // kernel width
-    int outputRowSize = 12;
-    int outputColumnSize = 4;
+    int outputRowSize = 1280;
+    int outputColumnSize = 960;
     int inputIndex, outputRow, outputColumn, outputIndex;
 
     // Output Image Stack defintion
@@ -212,16 +268,16 @@ int main(int argc, char **argv)
     float *outputB = (float *)calloc(outputRowSize * outputColumnSize, sizeof(float));
 
     // read in input 2x2 pixels
-    float inputImageR[12] = {1, 5, 6, 7, 80, 100, 150, 255,1, 5, 6, 7};
-    float inputImageG[12] = {80, 100, 150, 255, 1, 5, 6, 7,6, 7, 80, 100};
-    float inputImageB[12] = {123, 154, 112, 111, 80, 100, 150, 255,1, 5, 6, 7};
+    float *inputImageR = (float *)calloc(640 * 480, sizeof(float));
+    float *inputImageG = (float *)calloc(640 * 480, sizeof(float));
+    float *inputImageB = (float *)calloc(640 * 480, sizeof(float));
+    decodeImage(inputImageR, inputImageG, inputImageB);
 
-
-
-    t0 = rdtsc();
-    // generate coefficients
     float *coefficients = (float *)calloc(4 * 4 * 4, sizeof(float));
     generateCoefficients(coefficients);
+    
+    t0 = rdtsc();
+    // generate coefficients
     for(int i = 0; i < (outputColumnSize*outputRowSize)/16 ; i++){
         inputIndex = (i*4);
         outputRow = 4*((i*2)/(outputRowSize/2));
@@ -231,35 +287,35 @@ int main(int argc, char **argv)
     }
     // kernel(inputImageR, inputImageG, inputImageB, outputR, outputG, outputB, coefficients, rowSize);
     t1 = rdtsc();
-    printf("cycles taken (I think): %f\n", ((double)(t1) * MAX_FREQ / BASE_FREQ));
-
-    cout << "R=========================\n";
-    for (int i = 0; i < outputColumnSize*outputRowSize;)
-    {
-        for (int j = 0; j < outputRowSize; j++)
-        {
-            cout << outputR[i++] << '\t';
-        }
-        cout << '\n';
-    }
-    cout << "G=========================\n";
-    for (int i = 0; i < outputColumnSize*outputRowSize;)
-    {
-        for (int j = 0; j < outputRowSize; j++)
-        {
-            cout << outputG[i++] << '\t';
-        }
-        cout << '\n';
-    }
-    cout << "B=========================\n";
-    for (int i = 0; i < outputColumnSize*outputRowSize;)
-    {
-        for (int j = 0; j < outputRowSize; j++)
-        {
-            cout << outputB[i++] << '\t';
-        }
-        cout << '\n';
-    }
+    printf("cycles taken (I think): %f\n", ((double)(t1 - t0) * MAX_FREQ / BASE_FREQ));
+    encodeImage(outputR, outputG, outputB);
+    // cout << "R=========================\n";
+    // for (int i = 0; i < outputColumnSize*outputRowSize;)
+    // {
+    //     for (int j = 0; j < outputRowSize; j++)
+    //     {
+    //         cout << outputR[i++] << '\t';
+    //     }
+    //     cout << '\n';
+    // }
+    // cout << "G=========================\n";
+    // for (int i = 0; i < outputColumnSize*outputRowSize;)
+    // {
+    //     for (int j = 0; j < outputRowSize; j++)
+    //     {
+    //         cout << outputG[i++] << '\t';
+    //     }
+    //     cout << '\n';
+    // }
+    // cout << "B=========================\n";
+    // for (int i = 0; i < outputColumnSize*outputRowSize;)
+    // {
+    //     for (int j = 0; j < outputRowSize; j++)
+    //     {
+    //         cout << outputB[i++] << '\t';
+    //     }
+    //     cout << '\n';
+    // }
     free(coefficients);
     free(outputR);
     free(outputG);

@@ -25,6 +25,8 @@ benchmark : src/benchmark.cpp
 kernel: src/kernelImage.cpp
 	@echo ==========================================
 	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
+	objdump -d ./build/kernel > kernel.S
+	./build/kernel
 
 
 memory: src/memory.cpp
