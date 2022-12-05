@@ -17,8 +17,8 @@ using namespace std;
 
 #define WINDOWSIZE 2
 
-#define ROWS 8
-#define COLS 8
+#define ROWS 480
+#define COLS 640
 
 char *home = "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/";
 
@@ -31,43 +31,31 @@ static __inline__ unsigned long long rdtsc(void)
     return ((unsigned long long)lo) | (((unsigned long long)hi) << 32);
 }
 
-int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB, char *fileName)
+int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB)
 {
     int i, j, index = 0;
     float *tmpBuffer;
     // READ IMAGE and Init buffers
-    // const char *fileName = "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/inputs/640x480.jpg";
-    Mat fullImage;
-    Mat windowImage;
+    const char *fileName = "inputs/640x480.jpg";
+    Mat fullImage, windowImage;
     Mat channels[3];
     std::vector<float> array;
     fullImage = imread(fileName);
-    int imageRows = (int)fullImage.rows;
-    int imageCols = (int)fullImage.cols;
+    int imageRows = (int)fullImage.rows, imageCols = (int)fullImage.cols;
     cout << "Width : " << imageCols << endl;
     cout << "Height: " << imageRows << endl;
-    // inputImageR = (float *)calloc(fullImage.cols * fullImage.rows, sizeof(float));
-    // inputImageG = (float *)calloc(fullImage.cols * fullImage.rows, sizeof(float));
-    // inputImageB = (float *)calloc(fullImage.cols * fullImage.rows, sizeof(float));
 
-    for (i = 0; i + WINDOWSIZE <= imageRows; i = i + WINDOWSIZE)
-    {
-        for (j = 0; j + WINDOWSIZE <= imageCols; j = j + WINDOWSIZE)
-        {
-            windowImage = fullImage(Range(i, i + WINDOWSIZE), Range(j, j + WINDOWSIZE));
-            split(windowImage, channels);
-            array.assign(channels[0].datastart, channels[0].dataend);
-            tmpBuffer = &array[0];
-            memcpy(inputImageB + index, tmpBuffer, 4 * sizeof(float));
-            array.assign(channels[1].datastart, channels[1].dataend);
-            tmpBuffer = &array[0];
-            memcpy(inputImageG + index, tmpBuffer, 4 * sizeof(float));
-            array.assign(channels[2].datastart, channels[2].dataend);
-            tmpBuffer = &array[0];
-            memcpy(inputImageR + index, tmpBuffer, 4 * sizeof(float));
-            index = index + 4;
-        }
-    }
+    split(fullImage, channels);
+    array.assign(channels[0].datastart, channels[0].dataend);
+    tmpBuffer = &array[0];
+    memcpy(inputImageB, tmpBuffer, imageCols * imageRows * sizeof(float));
+    array.assign(channels[1].datastart, channels[1].dataend);
+    tmpBuffer = &array[0];
+    memcpy(inputImageG, tmpBuffer, imageCols * imageRows * sizeof(float));
+    array.assign(channels[2].datastart, channels[2].dataend);
+    tmpBuffer = &array[0];
+    memcpy(inputImageR, tmpBuffer, imageCols * imageRows * sizeof(float));
+    cout << "RGB Channels Read and assgined"<<endl;
     return 0;
 }
 
@@ -102,29 +90,26 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     const int mask1 = (2) | (2 << 2) | (3 << 4) | (3 << 6);
 
     inR = _mm_load_ps(intensityRin);
-    inG = _mm_load_ps(intensityGin);
-    inB = _mm_load_ps(intensityBin);
-
     outRA = _mm_permute_ps(inR, mask0);
-    outRB = _mm_permute_ps(inR, mask1);
-    outGA = _mm_permute_ps(inG, mask0);
-    outGB = _mm_permute_ps(inG, mask1);
-    outBA = _mm_permute_ps(inB, mask0);
-    outBB = _mm_permute_ps(inB, mask1);
-
     _mm_store_ps(intensityRout + (0 * rowSize), outRA);
     _mm_store_ps(intensityRout + (1 * rowSize), outRA);
+    outRB = _mm_permute_ps(inR, mask1);
+    _mm_store_ps(intensityRout + 4, outRB);
+    _mm_store_ps(intensityRout + 4 + rowSize, outRB);
+    inG = _mm_load_ps(intensityGin);
+    outGA = _mm_permute_ps(inG, mask0);
     _mm_store_ps(intensityGout + (0 * rowSize), outGA);
     _mm_store_ps(intensityGout + (1 * rowSize), outGA);
+    inB = _mm_load_ps(intensityBin);
+    outGB = _mm_permute_ps(inG, mask1);
+    _mm_store_ps(intensityGout + 4, outGB);
+    _mm_store_ps(intensityGout + (4+ rowSize), outGB);
+    outBA = _mm_permute_ps(inB, mask0);
     _mm_store_ps(intensityBout + (0 * rowSize), outBA);
     _mm_store_ps(intensityBout + (1 * rowSize), outBA);
-
-    _mm_store_ps(intensityRout + (2 * rowSize), outRB);
-    _mm_store_ps(intensityRout + (3 * rowSize), outRB);
-    _mm_store_ps(intensityGout + (2 * rowSize), outGB);
-    _mm_store_ps(intensityGout + (3 * rowSize), outGB);
-    _mm_store_ps(intensityBout + (2 * rowSize), outBB);
-    _mm_store_ps(intensityBout + (3 * rowSize), outBB);
+    outBB = _mm_permute_ps(inB, mask1);
+    _mm_store_ps(intensityBout + 4, outBB);
+    _mm_store_ps(intensityBout + (4+ rowSize), outBB);
 }
 
 int main(int argc, char **argv)
@@ -151,19 +136,19 @@ int main(int argc, char **argv)
 
     char AfileName[100];
     strcpy(AfileName, home);
-    // strcat(AfileName, "inputs/640x480.jpg");
-    strcat(AfileName, "inputs/8x8.jpg");
+    strcat(AfileName, "inputs/640x480.jpg");
+    // strcat(AfileName, "inputs/8x8.jpg");
 
-    decodeImage(inputImageR, inputImageG, inputImageB, AfileName);
+    decodeImage(inputImageR, inputImageG, inputImageB);
 
     t0 = rdtsc();
     for (int i = 0; i < (outputColumnSize * outputRowSize) / 16; i++)
     {
-        inputIndex = (i * 4);
-        outputRow = 4 * ((i * 2) / (outputRowSize / 2));
-        outputColumn = 2 * ((i * 2) % (outputRowSize / 2));
+        outputRow = 2 * ((i * 4) / (outputRowSize / 2));
+        outputColumn = 2 * ((i * 4) % (outputRowSize / 2));
         outputIndex = (outputRow * outputRowSize) + outputColumn;
-        // cout << i << '\t' << inputImageR[inputIndex] << endl;
+        inputIndex = (i*4);
+        // cout << i << '\t' << inputIndex << endl;
         kernel(inputImageR + inputIndex, inputImageG + inputIndex, inputImageB + inputIndex, outputR + outputIndex, outputG + outputIndex, outputB + outputIndex, outputRowSize);
     }
     t1 = rdtsc();
