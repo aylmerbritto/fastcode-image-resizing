@@ -1,4 +1,4 @@
-CFLAGS = `pkg-config --cflags opencv` -mavx -mavx2 -mfma -O3
+CFLAGS = `pkg-config --cflags opencv` -mavx -mavx2 -mfma -O1
 LIBS = `pkg-config --libs opencv`
 
 versiontest : src/version.cpp
@@ -28,6 +28,11 @@ kernel: src/fastKernel.cpp
 	objdump -d ./build/kernel > kernel.S
 	./build/kernel
 
+parallel: src/parallelKernel.cpp
+	@echo ==========================================
+	g++ $(CFLAGS) $(LIBS) -fopenmp -o build/$@ $<
+	objdump -d ./build/parallel > parallel.S
+	./build/parallel
 
 
 memory: src/memory.cpp
@@ -44,8 +49,15 @@ performance: src/performanceTest.cpp
 	@echo ==========================================
 	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
 
+performanceOld: src/performanceTestOld.cpp
+	@echo ==========================================
+	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
+
 rp: clean bm performance
 	sh performanceDriver.sh > plots/kernelPerformance.csv
+
+rpOld: clean bm performanceOld
+	sh performanceDriverbkp.sh > plots/kernelPerformance.csv
 
 clean : 
 	rm -rf build/*
