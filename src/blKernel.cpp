@@ -14,11 +14,10 @@ using namespace std;
 
 #define MAX_FREQ 3.2
 #define BASE_FREQ 2.4
+#define WINDOWSIZE 2
 
-#define mask0  (0) | (0 << 2) | (0 << 4) | (0 << 6)
-#define mask1  (1) | (1 << 2) | (1 << 4) | (1 << 6)
-#define mask2  (2) | (2 << 2) | (2 << 4) | (2 << 6)
-#define mask3  (3) | (3 << 2) | (3 << 4) | (3 << 6)
+#define INPUTWIDTH 640
+#define INPUTHEIGHT 480
 
 
 // timing routine for reading the time stamp counter
@@ -29,6 +28,48 @@ static __inline__ unsigned long long rdtsc(void)
                          : "=a"(lo), "=d"(hi));
     return ((unsigned long long)lo) | (((unsigned long long)hi) << 32);
 }
+
+int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB)
+{
+    int i, j, index = 0;
+    float *tmpBuffer;
+    // READ IMAGE and Init buffers
+    const char *fileName = "inputs/640x480.jpg";
+    Mat fullImage, windowImage;
+    Mat channels[3];
+    std::vector<float> array;
+    fullImage = imread(fileName);
+    int imageRows = (int)fullImage.rows, imageCols = (int)fullImage.cols;
+    
+    split(fullImage, channels);
+    array.assign(channels[0].datastart, channels[0].dataend);
+    tmpBuffer = &array[0];
+    memcpy(inputImageB, tmpBuffer, imageCols * imageRows * sizeof(float));
+    array.assign(channels[1].datastart, channels[1].dataend);
+    tmpBuffer = &array[0];
+    memcpy(inputImageG, tmpBuffer, imageCols * imageRows * sizeof(float));
+    array.assign(channels[2].datastart, channels[2].dataend);
+    tmpBuffer = &array[0];
+    memcpy(inputImageR, tmpBuffer, imageCols * imageRows * sizeof(float));
+    return 0;
+}
+
+int encodeImage(float *outputR, float *outputG, float *outputB){
+    const char *fileName = "/afs/ece.cmu.edu/usr/arexhari/Public/645-project/results/640x480-bl.jpg";
+    vector<Mat> channels;
+    Mat finalImage;
+    cv::Mat matR = cv::Mat(INPUTHEIGHT*2, INPUTWIDTH*2, CV_32F, outputR);
+    cv::Mat matG = cv::Mat(INPUTHEIGHT*2, INPUTWIDTH*2, CV_32F, outputG);
+    cv::Mat matB = cv::Mat(INPUTHEIGHT*2, INPUTWIDTH*2, CV_32F, outputB);
+
+    channels.push_back(matB);
+    channels.push_back(matG);
+    channels.push_back(matR);
+
+    merge(channels, finalImage);
+    imwrite(fileName, finalImage); 
+}
+
 
 void generateCoefficients(float *coefficients)
 {
@@ -65,10 +106,6 @@ void generateCoefficients(float *coefficients)
     vec2 = _mm_load_ps(vec2flt);
     vec3 = _mm_load_ps(vec3flt);
     vec4 = _mm_load_ps(vec4flt);
-    // vec1 = _mm_set_ps(0, 1/3.0, 2/3.0, 1); //z*a1*c
-    // vec2 = _mm_set_ps(0, 2/9.0, 4/9.0, 6/9.0); //z*a2*c
-    // vec3 = _mm_set_ps(0, 1/9.0, 2/9.0, 3/9.0); //z*a3*c
-    // vec4 = _mm_set_ps(0, 0, 0, 0); //z*a4*c
     _mm_store_ps(coefficients, vec1);
     _mm_store_ps(coefficients + 4, vec2);
     _mm_store_ps(coefficients + 8, vec3);
@@ -81,11 +118,7 @@ void generateCoefficients(float *coefficients)
     vec1 = _mm_load_ps(vec5flt);
     vec2 = _mm_load_ps(vec6flt);
     vec3 = _mm_load_ps(vec7flt);
-    vec4 = _mm_load_ps(vec8flt);
-    // vec1 = _mm_set_ps(1, 2 / 3.0, 1 / 3.0, 0);       // z*a1*d
-    // vec2 = _mm_set_ps(6 / 9.0, 4 / 9.0, 2 / 9.0, 0); // z*a2*d
-    // vec3 = _mm_set_ps(3 / 9.0, 2 / 9.0, 1 / 9.0, 0); // z*a3*d
-    // vec4 = _mm_set_ps(0, 0, 0, 0);                   // z*a4*c
+    vec4 = _mm_load_ps(vec8flt);  
     _mm_store_ps(coefficients + 16, vec1);
     _mm_store_ps(coefficients + 20, vec2);
     _mm_store_ps(coefficients + 24, vec3);
@@ -98,11 +131,7 @@ void generateCoefficients(float *coefficients)
     vec1 = _mm_load_ps(vec9flt);
     vec2 = _mm_load_ps(vec10flt);
     vec3 = _mm_load_ps(vec11flt);
-    vec4 = _mm_load_ps(vec12flt);
-    // vec4 = _mm_set_ps(0, 1 / 3.0, 2 / 3.0, 1);       // z*b4*c
-    // vec3 = _mm_set_ps(0, 2 / 9.0, 4 / 9.0, 6 / 9.0); // z*b3*c
-    // vec2 = _mm_set_ps(0, 1 / 9.0, 2 / 9.0, 3 / 9.0); // z*b2*c
-    // vec1 = _mm_set_ps(0, 0, 0, 0);                   // z*b1*c
+    vec4 = _mm_load_ps(vec12flt);   
     _mm_store_ps(coefficients + 32, vec1);
     _mm_store_ps(coefficients + 36, vec2);
     _mm_store_ps(coefficients + 40, vec3);
@@ -117,10 +146,6 @@ void generateCoefficients(float *coefficients)
     vec3 = _mm_load_ps(vec15flt);
     vec4 = _mm_load_ps(vec16flt);
 
-    // vec4 = _mm_set_ps(1.0, 2 / 3.0, 1 / 3.0, 0.0);     // z*b4*d
-    // vec3 = _mm_set_ps(6 / 9.0, 4 / 9.0, 2 / 9.0, 0.0); // z*b3*d
-    // vec2 = _mm_set_ps(3 / 9.0, 2 / 9.0, 1 / 9.0, 0.0); // z*b2*d
-    // vec1 = _mm_set_ps(0.0, 0.0, 0.0, 0.0);             // z*b1*d
     _mm_store_ps(coefficients + 48, vec1);
     _mm_store_ps(coefficients + 52, vec2);
     _mm_store_ps(coefficients + 56, vec3);
@@ -131,17 +156,16 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
 {
     float *address;
     // load inR, inG, inB pixel values (4 values each)
-    __m128 inR = _mm_load_ps(intensityRin); __m128 inG = _mm_load_ps(intensityGin); __m128 inB = _mm_load_ps(intensityBin);
-    
+
     //Initializing the first row of output Pixels
     __m128 outRA = _mm_setzero_ps(); __m128 outGA = _mm_setzero_ps(); __m128 outBA = _mm_setzero_ps();
     // Q11 over the SIMD Register
-    __m128 tmpR = _mm_permute_ps(inR, mask0); __m128 tmpG = _mm_permute_ps(inG, mask0); __m128 tmpB = _mm_permute_ps(inB, mask0);
+    __m128 tmpR = _mm_broadcast_ss(intensityRin); __m128 tmpG = _mm_broadcast_ss(intensityGin); __m128 tmpB = _mm_broadcast_ss(intensityBin);
     //Load A1*C*Z
-    __m128 coefsA = _mm_load_ps(coefficients + 0);
+    __m128 coefsA = _mm_load_ps(coefficients + 0); // 
     outRA = _mm_fmadd_ps(tmpR, coefsA, outRA); outGA = _mm_fmadd_ps(tmpG, coefsA, outGA); outBA = _mm_fmadd_ps(tmpB, coefsA, outBA);
     // Q12 over the SIMD Register
-    tmpR = _mm_permute_ps(inR, mask1); tmpG = _mm_permute_ps(inG, mask1); tmpB = _mm_permute_ps(inB, mask1);
+    tmpR = _mm_broadcast_ss(intensityRin+1); tmpG = _mm_broadcast_ss(intensityGin+1); tmpB = _mm_broadcast_ss(intensityBin+1);
     //Load A2*C*Z
     __m128 coefsB = _mm_load_ps(coefficients + 4);
     __m128 outRB = _mm_setzero_ps(); __m128 outGB = _mm_setzero_ps(); __m128 outBB = _mm_setzero_ps(); 
@@ -153,13 +177,13 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     outRB = _mm_fmadd_ps(tmpR, coefsB, outRB); outGB = _mm_fmadd_ps(tmpG, coefsB, outGB); outBB = _mm_fmadd_ps(tmpB, coefsB, outBB);
 
     // Q21 over the SIMD Register
-    tmpR = _mm_permute_ps(inR, mask2); tmpG = _mm_permute_ps(inG, mask2); tmpB = _mm_permute_ps(inB, mask2);
+    tmpR = _mm_broadcast_ss(intensityRin+(rowSize/2)); tmpG = _mm_broadcast_ss(intensityGin+(rowSize/2)); tmpB = _mm_broadcast_ss(intensityBin+(rowSize/2));
     coefsA = _mm_load_ps(coefficients + 32);
     outRA = _mm_fmadd_ps(tmpR, coefsA, outRA); outGA = _mm_fmadd_ps(tmpG, coefsA, outGA); outBA = _mm_fmadd_ps(tmpB, coefsA, outBA);
     coefsB = _mm_load_ps(coefficients + 36);
     outRB = _mm_fmadd_ps(tmpR, coefsB, outRB); outGB = _mm_fmadd_ps(tmpG, coefsB, outGB); outBB = _mm_fmadd_ps(tmpB, coefsB, outBB);
     
-    tmpR = _mm_permute_ps(inR, mask3); tmpG = _mm_permute_ps(inG, mask3); tmpB = _mm_permute_ps(inB, mask3);
+    tmpR = _mm_broadcast_ss(intensityRin+(rowSize/2)+1); tmpG = _mm_broadcast_ss(intensityGin+(rowSize/2)+1); tmpB = _mm_broadcast_ss(intensityBin+(rowSize/2)+1);
     coefsA = _mm_load_ps(coefficients + 48);
     outRA = _mm_fmadd_ps(tmpR, coefsA, outRA); outGA = _mm_fmadd_ps(tmpG, coefsA, outGA); outBA = _mm_fmadd_ps(tmpB, coefsA, outBA);
     coefsB = _mm_load_ps(coefficients + 52);
@@ -170,25 +194,25 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     
     outRA = _mm_setzero_ps(); outGA = _mm_setzero_ps(); outBA = _mm_setzero_ps();
     coefsB = _mm_load_ps(coefficients + 12);
-    tmpR = _mm_permute_ps(inR, mask0); tmpG = _mm_permute_ps(inG, mask0); tmpB = _mm_permute_ps(inB, mask0);
+    tmpR = _mm_broadcast_ss(intensityRin); tmpG = _mm_broadcast_ss(intensityGin); tmpB = _mm_broadcast_ss(intensityBin);
     coefsA = _mm_load_ps(coefficients + 8);
     outRA = _mm_fmadd_ps(tmpR, coefsA, outRA); outGA = _mm_fmadd_ps(tmpG, coefsA, outGA); outBA = _mm_fmadd_ps(tmpB, coefsA, outBA);
 
     outRB = _mm_setzero_ps(); outGB = _mm_setzero_ps(); outBB = _mm_setzero_ps(); 
     outRB = _mm_fmadd_ps(tmpR, coefsB, outRB); outGB = _mm_fmadd_ps(tmpG, coefsB, outGB); outBB = _mm_fmadd_ps(tmpB, coefsB, outBB);
     coefsA = _mm_load_ps(coefficients + 24);
-    tmpR = _mm_permute_ps(inR, mask1); tmpG = _mm_permute_ps(inG, mask1);tmpB = _mm_permute_ps(inB, mask1);
+    tmpR = _mm_broadcast_ss(intensityRin+1); tmpG = _mm_broadcast_ss(intensityGin+1); tmpB = _mm_broadcast_ss(intensityBin+1);
     outRA = _mm_fmadd_ps(tmpR, coefsA, outRA); outGA = _mm_fmadd_ps(tmpG, coefsA, outGA);outBA = _mm_fmadd_ps(tmpB, coefsA, outBA);
     coefsB = _mm_load_ps(coefficients + 28);
     outRB = _mm_fmadd_ps(tmpR, coefsB, outRB); outGB = _mm_fmadd_ps(tmpG, coefsB, outGB);outBB = _mm_fmadd_ps(tmpB, coefsB, outBB);
     
-    tmpR = _mm_permute_ps(inR, mask2); tmpG = _mm_permute_ps(inG, mask2); tmpB = _mm_permute_ps(inB, mask2);
+    tmpR = _mm_broadcast_ss(intensityRin+(rowSize/2)); tmpG = _mm_broadcast_ss(intensityGin+(rowSize/2)); tmpB = _mm_broadcast_ss(intensityBin+(rowSize/2));
     coefsA = _mm_load_ps(coefficients + 40);
     outRA = _mm_fmadd_ps(tmpR, coefsA, outRA); outGA = _mm_fmadd_ps(tmpG, coefsA, outGA); outBA = _mm_fmadd_ps(tmpB, coefsA, outBA);
     coefsB = _mm_load_ps(coefficients + 44);
     outRB = _mm_fmadd_ps(tmpR, coefsB, outRB); outGB = _mm_fmadd_ps(tmpG, coefsB, outGB); outBB = _mm_fmadd_ps(tmpB, coefsB, outBB);
 
-    tmpR = _mm_permute_ps(inR, mask3); tmpG = _mm_permute_ps(inG, mask3); tmpB = _mm_permute_ps(inB, mask3);
+    tmpR = _mm_broadcast_ss(intensityRin+(rowSize/2)+1); tmpG = _mm_broadcast_ss(intensityGin+(rowSize/2)+1); tmpB = _mm_broadcast_ss(intensityBin+(rowSize/2)+1);
     coefsA = _mm_load_ps(coefficients + 56);
     outRA = _mm_fmadd_ps(tmpR, coefsA, outRA); outGA = _mm_fmadd_ps(tmpG, coefsA, outGA); outBA = _mm_fmadd_ps(tmpB, coefsA, outBA);
     coefsB = _mm_load_ps(coefficients + 60);
@@ -198,12 +222,13 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     _mm_store_ps(intensityGout + (3 * rowSize), outGB); _mm_store_ps(intensityRout + (3 * rowSize), outRB); _mm_store_ps(intensityBout + (3 * rowSize), outBB);  
 }
 
+
 int main(int argc, char **argv)
 {
-    unsigned long long t0, t1;
+    unsigned long long t0, t1, sum=0;
     // kernel width
-    int outputRowSize = 12;
-    int outputColumnSize = 4;
+    int outputRowSize = INPUTWIDTH*2;
+    int outputColumnSize = INPUTHEIGHT*2;
     int inputIndex, outputRow, outputColumn, outputIndex;
 
     // Output Image Stack defintion
@@ -212,54 +237,31 @@ int main(int argc, char **argv)
     float *outputB = (float *)calloc(outputRowSize * outputColumnSize, sizeof(float));
 
     // read in input 2x2 pixels
-    float inputImageR[12] = {1, 5, 6, 7, 80, 100, 150, 255,1, 5, 6, 7};
-    float inputImageG[12] = {80, 100, 150, 255, 1, 5, 6, 7,6, 7, 80, 100};
-    float inputImageB[12] = {123, 154, 112, 111, 80, 100, 150, 255,1, 5, 6, 7};
-
-
-
+    float *inputImageR = (float *)calloc(INPUTWIDTH * INPUTHEIGHT, sizeof(float));
+    float *inputImageG = (float *)calloc(INPUTWIDTH * INPUTHEIGHT, sizeof(float)); 
+    float *inputImageB = (float *)calloc(INPUTWIDTH * INPUTHEIGHT, sizeof(float));
     t0 = rdtsc();
-    // generate coefficients
+    decodeImage(inputImageR, inputImageG, inputImageB);
+    t1 = rdtsc();
+    // printf("PREPROCESSING TIME %f\n", ((double)(t1-t0) * MAX_FREQ / BASE_FREQ));
     float *coefficients = (float *)calloc(4 * 4 * 4, sizeof(float));
     generateCoefficients(coefficients);
+    int n16 = INPUTWIDTH/16; 
+    // generate coefficients
     for(int i = 0; i < (outputColumnSize*outputRowSize)/16 ; i++){
-        inputIndex = (i*4);
         outputRow = 4*((i*2)/(outputRowSize/2));
         outputColumn = 2*((i*2)%(outputRowSize/2));
         outputIndex = (outputRow*outputRowSize)+outputColumn;
+        inputIndex = ((outputRow*outputRowSize)/4)+(outputColumn/2);
+        t0 = rdtsc();
         kernel(inputImageR+inputIndex, inputImageG+inputIndex, inputImageB+inputIndex,outputR+outputIndex, outputG+outputIndex, outputB+outputIndex,coefficients, outputRowSize);
+        t1 = rdtsc();
+        sum=sum+(t1-t0);
     }
-    // kernel(inputImageR, inputImageG, inputImageB, outputR, outputG, outputB, coefficients, rowSize);
-    t1 = rdtsc();
-    printf("cycles taken (I think): %f\n", ((double)(t1) * MAX_FREQ / BASE_FREQ));
-
-    cout << "R=========================\n";
-    for (int i = 0; i < outputColumnSize*outputRowSize;)
-    {
-        for (int j = 0; j < outputRowSize; j++)
-        {
-            cout << outputR[i++] << '\t';
-        }
-        cout << '\n';
-    }
-    cout << "G=========================\n";
-    for (int i = 0; i < outputColumnSize*outputRowSize;)
-    {
-        for (int j = 0; j < outputRowSize; j++)
-        {
-            cout << outputG[i++] << '\t';
-        }
-        cout << '\n';
-    }
-    cout << "B=========================\n";
-    for (int i = 0; i < outputColumnSize*outputRowSize;)
-    {
-        for (int j = 0; j < outputRowSize; j++)
-        {
-            cout << outputB[i++] << '\t';
-        }
-        cout << '\n';
-    }
+    
+    sum =  ((sum) * MAX_FREQ / BASE_FREQ);
+    double GFLOPS = (2*48*4*((INPUTHEIGHT*INPUTWIDTH*4)/16))/sum;
+    encodeImage(outputR, outputG, outputB);
     free(coefficients);
     free(outputR);
     free(outputG);

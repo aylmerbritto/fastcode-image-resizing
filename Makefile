@@ -1,63 +1,80 @@
-CFLAGS = `pkg-config --cflags opencv` -mavx -mavx2 -mfma -O1
+CFLAGS = `pkg-config --cflags opencv` -mavx -mavx2 -mfma -O3
 LIBS = `pkg-config --libs opencv`
 
 versiontest : src/version.cpp
 	mkdir -p build/
 	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
 	@echo ==========================================
-	@echo Execution results
+	@echo Running version test
 	@echo ==========================================
 	./build/versiontest
 
-benchmark : src/benchmark.cpp
+bmbl : src/benchmarkBL.cpp
 	@echo ==========================================
-	@echo Compiling benchmark script
-	@echo ==========================================
-	mkdir -p build/
-	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
-	@echo ==========================================
-	@echo Executing benchmark script
-	@echo ==========================================
-	mkdir -p results/benchmark/
-	./build/benchmark > plots/benchmarkTime.csv
-	python scripts/plotPerformance.py
-
-kernel: src/fastKernel.cpp
-	@echo ==========================================
-	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
-	objdump -d ./build/kernel > kernel.S
-	./build/kernel
-
-parallel: src/parallelKernel.cpp
+	@echo Compiling the benchmark script for Bi-Linear
 	@echo ==========================================
 	g++ $(CFLAGS) $(LIBS) -fopenmp -o build/$@ $<
-	objdump -d ./build/parallel > parallel.S
-	./build/parallel
 
+bmnn : src/benchmarkBL.cpp
+	@echo ==========================================
+	@echo Compiling the benchmark script for Nearest-neighbors
+	@echo ==========================================
+	g++ $(CFLAGS) $(LIBS) -fopenmp -o build/$@ $<
 
-memory: src/memory.cpp
-	g++ $(CFLAGS) $(LIBS) -o build/$@ $<	
+kernel: src/blKernel.cpp
+	@echo ==========================================
+	@echo Compiling the bi-linear kernel
+	@echo ==========================================
+	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
+	objdump -d ./build/kernel > asm/kernelBL.S
+	./build/kernel
 
-nn: src/nnImage.cpp
+nn: src/nnKernel.cpp
+	@echo ==========================================
+	@echo Compiling the Nearest Neighbor kernel
+	@echo ==========================================
+	mkdir -p asm
+	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
+	objdump -d ./build/nn > asm/kernelNN.S
+	./build/nn
+
+parallel: src/blParallel.cpp
+	@echo ==========================================
+	@echo Compiling the parallel script for Bi-Linear
+	@echo ==========================================
+	g++ $(CFLAGS) $(LIBS) -fopenmp -o build/$@ $<
+	objdump -d ./build/parallel > asm/parallelBL.S
+	./build/parallel > plots/blParallel.csv
+
+parallelNN: src/nnParallel.cpp
+	@echo ==========================================
+	@echo Compiling the parallel script for Nearest Neighbors
+	@echo ==========================================
+	g++ $(CFLAGS) $(LIBS) -fopenmp -o build/$@ $<
+	objdump -d ./build/parallelNN > asm/parallelNN.S
+	./build/parallelNN	> plots/nnParallel.csv
+
+performance: src/blPerformance.cpp
+	@echo ==========================================
+	@echo Compiling the parallel script for Bi-Linear Script
 	@echo ==========================================
 	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
 
-bm : src/benchmarkSpec.cpp
-	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
-
-performance: src/performanceTest.cpp
+performanceNN: src/nnPerformance.cpp
+	@echo ==========================================
+	@echo Compiling the parallel script for Nearest Neighbors
 	@echo ==========================================
 	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
 
-performanceOld: src/performanceTestOld.cpp
-	@echo ==========================================
-	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
+bi-linear-performance: clean bmbl performance
+	sh performanceDriverBL.sh > plots/kernelPerformance.csv
 
-rp: clean bm performance
-	sh performanceDriver.sh > plots/kernelPerformance.csv
+nn-performance: clean bmnn performanceNN
+	sh performanceDriverNN.sh > plots/kernelPerformanceNN.csv
 
-rpOld: clean bm performanceOld
-	sh performanceDriverbkp.sh > plots/kernelPerformance.csv
+bi-linear-run: clean kernel
+
+nn-run: clean nn
 
 clean : 
 	rm -rf build/*
