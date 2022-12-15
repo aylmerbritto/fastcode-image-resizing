@@ -26,8 +26,8 @@ kernel: src/blKernel.cpp
 	@echo Compiling the bi-linear kernel
 	@echo ==========================================
 	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
-	objdump -d ./build/kernelBL > asm/kernelBL.S
-	./build/kernelBL
+	objdump -d ./build/kernel > asm/kernelBL.S
+	./build/kernel
 
 nn: src/nnKernel.cpp
 	@echo ==========================================
@@ -44,7 +44,7 @@ parallel: src/blParallel.cpp
 	@echo ==========================================
 	g++ $(CFLAGS) $(LIBS) -fopenmp -o build/$@ $<
 	objdump -d ./build/parallel > asm/parallelBL.S
-	./build/parallel
+	./build/parallel > plots/blParallel.csv
 
 parallelNN: src/nnParallel.cpp
 	@echo ==========================================
@@ -52,7 +52,7 @@ parallelNN: src/nnParallel.cpp
 	@echo ==========================================
 	g++ $(CFLAGS) $(LIBS) -fopenmp -o build/$@ $<
 	objdump -d ./build/parallelNN > asm/parallelNN.S
-	./build/parallelNN	
+	./build/parallelNN	> plots/nnParallel.csv
 
 performance: src/blPerformance.cpp
 	@echo ==========================================

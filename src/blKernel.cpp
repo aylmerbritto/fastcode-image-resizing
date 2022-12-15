@@ -34,14 +34,12 @@ int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB)
     int i, j, index = 0;
     float *tmpBuffer;
     // READ IMAGE and Init buffers
-    const char *fileName = "inputs/8x8.jpg";
+    const char *fileName = "inputs/640x480.jpg";
     Mat fullImage, windowImage;
     Mat channels[3];
     std::vector<float> array;
     fullImage = imread(fileName);
     int imageRows = (int)fullImage.rows, imageCols = (int)fullImage.cols;
-    cout << "Width : " << imageCols << endl;
-    cout << "Height: " << imageRows << endl;
     
     split(fullImage, channels);
     array.assign(channels[0].datastart, channels[0].dataend);
@@ -53,7 +51,6 @@ int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB)
     array.assign(channels[2].datastart, channels[2].dataend);
     tmpBuffer = &array[0];
     memcpy(inputImageR, tmpBuffer, imageCols * imageRows * sizeof(float));
-    cout << "RGB Channels Read and assgined"<<endl;
     return 0;
 }
 
@@ -256,7 +253,6 @@ int main(int argc, char **argv)
         outputColumn = 2*((i*2)%(outputRowSize/2));
         outputIndex = (outputRow*outputRowSize)+outputColumn;
         inputIndex = ((outputRow*outputRowSize)/4)+(outputColumn/2);
-        // cout << i << "  " <<inputIndex<< "  "  << outputIndex<<endl;
         t0 = rdtsc();
         kernel(inputImageR+inputIndex, inputImageG+inputIndex, inputImageB+inputIndex,outputR+outputIndex, outputG+outputIndex, outputB+outputIndex,coefficients, outputRowSize);
         t1 = rdtsc();
@@ -265,18 +261,9 @@ int main(int argc, char **argv)
     
     sum =  ((sum) * MAX_FREQ / BASE_FREQ);
     double GFLOPS = (2*48*4*((INPUTHEIGHT*INPUTWIDTH*4)/16))/sum;
-    cout << GFLOPS << ","<<GFLOPS<< endl;
     encodeImage(outputR, outputG, outputB);
     free(coefficients);
     free(outputR);
     free(outputG);
     free(outputB);
 }
-
-
-
-/*
-1. how many 16x16 images
-2. inputR = skip 16x16 = 256
-2. outputR  = skip 32x32 = 
-*/

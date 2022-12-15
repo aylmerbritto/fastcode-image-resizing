@@ -255,15 +255,15 @@ int main(int argc, char **argv)
     double localSum = 0;
     long double minTime = 4000000000000000;
     OoutputIndex = 0; OinputIndex = 0;
-    // for(int t=0;t<(gnHeight*gnWidth/256);t++){
-    //     OoutputRow = 16*((t*16)/(outputRowSize/2));
-    //     OoutputColumn = 2*((t*16)%(outputRowSize/2));
-    //     OoutputIndex = (OoutputRow*outputRowSize)+OoutputColumn;
-    //     OinputIndex = ((OoutputRow*outputRowSize)/4)+(outputColumn/2);
-    //     if(gnHeight>16){
-    //         outputColumnSize = 32;
-    //         outputRowSize = 32;
-    //     }
+    for(int t=0;t<(gnHeight*gnWidth/256);t++){
+        OoutputRow = 16*((t*16)/(outputRowSize/2));
+        OoutputColumn = 2*((t*16)%(outputRowSize/2));
+        OoutputIndex = (OoutputRow*outputRowSize)+OoutputColumn;
+        OinputIndex = ((OoutputRow*outputRowSize)/4)+(outputColumn/2);
+        if(gnHeight>16){
+            outputColumnSize = 32;
+            outputRowSize = 32;
+        }
         minTime = 4000000000000000;
         for(int k = 0; k < NUMBER_OF_RUNS; k++){
             sum=0;
@@ -282,10 +282,10 @@ int main(int argc, char **argv)
                 minTime =sum;
             }
         }
-        // localSum = localSum+minTime;
-    // }
+        localSum = localSum+minTime;
+    }
     // sum = ((sum) * MAX_FREQ / BASE_FREQ)/NUMBER_OF_RUNS;
-    sum = minTime* MAX_FREQ / BASE_FREQ;
+    sum = localSum* MAX_FREQ / BASE_FREQ;
     GFLOPS = (2*48*4*((gnHeight*gnWidth*4)/16))/sum;
     cout << gnHeight <<','<< GFLOPS <<','<< sum;
     // encodeImage(outputR, outputG, outputB);

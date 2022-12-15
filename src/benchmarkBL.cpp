@@ -28,6 +28,6 @@ int main(int argc, char **argv)
 	startTime = rdtsc();
 	resize(image, result, Size(image.cols*2, image.rows*2), INTER_LINEAR);
 	endTime = (rdtsc() - startTime)* MAX_FREQ / BASE_FREQ;
-	cout <<j<<','<< endTime << endl;
+	cout << endTime << endl;
 	return 0;
 }

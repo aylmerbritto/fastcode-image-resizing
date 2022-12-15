@@ -43,8 +43,6 @@ int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB)
     std::vector<float> array;
     fullImage = imread(fileName);
     int imageRows = (int)fullImage.rows, imageCols = (int)fullImage.cols;
-    cout << "Width : " << imageCols << endl;
-    cout << "Height: " << imageRows << endl;
 
     split(fullImage, channels);
     array.assign(channels[0].datastart, channels[0].dataend);
@@ -56,7 +54,6 @@ int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB)
     array.assign(channels[2].datastart, channels[2].dataend);
     tmpBuffer = &array[0];
     memcpy(inputImageR, tmpBuffer, imageCols * imageRows * sizeof(float));
-    cout << "RGB Channels Read and assgined"<<endl;
     return 0;
 }
 
