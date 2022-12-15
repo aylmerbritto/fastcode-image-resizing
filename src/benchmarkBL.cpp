@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include "omp.h"
 
 using namespace cv;
 using namespace std;
@@ -22,14 +23,11 @@ int main(int argc, char **argv)
 	Mat images[1];
 	Mat image, result;
 	char *fileName = argv[1];
-	const char *var = "/afs/ece.cmu.edu/usr/arexhari/Public/645-project/results/benchmark/640x480-nn.jpg";
 	unsigned long long startTime, endTime;
 	image = imread(fileName);
 	startTime = rdtsc();
 	resize(image, result, Size(image.cols*2, image.rows*2), INTER_LINEAR);
-	// Resizing the image - benchmark part
 	endTime = (rdtsc() - startTime)* MAX_FREQ / BASE_FREQ;
-	imwrite(var, result);
-	cout <<','<< endTime << endl;
+	cout <<j<<','<< endTime << endl;
 	return 0;
 }

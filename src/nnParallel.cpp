@@ -62,13 +62,9 @@ int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB)
 
 int encodeImage(float *outputR, float *outputG, float *outputB, char *fileName)
 {
-    // const char *fileName = "/afs/andrew.cmu.edu/usr19/anesathu/private/fastCodeProject/results/640x480-bl.jpg";
     vector<Mat> channels;
     Mat finalImage;
     Mat out;
-    // cv::Mat matR = cv::Mat(480 * 2, 640 * 2, CV_32F, outputR);
-    // cv::Mat matG = cv::Mat(480 * 2, 640 * 2, CV_32F, outputG);
-    // cv::Mat matB = cv::Mat(480 * 2, 640 * 2, CV_32F, outputB);
     cv::Mat matR = cv::Mat(ROWS * 2, COLS * 2, CV_32F, outputR);
     cv::Mat matG = cv::Mat(ROWS * 2, COLS * 2, CV_32F, outputG);
     cv::Mat matB = cv::Mat(ROWS * 2, COLS * 2, CV_32F, outputB);
@@ -78,9 +74,7 @@ int encodeImage(float *outputR, float *outputG, float *outputB, char *fileName)
     channels.push_back(matR);
 
     merge(channels, finalImage);
-    // transpose(finalImage, out);
     imwrite(fileName, finalImage);
-    // imwrite(fileName, out);
 }
 
 void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float *intensityRout, float *intensityGout, float *intensityBout, int rowSize)
@@ -124,9 +118,7 @@ int main(int argc, char **argv)
 {
     unsigned long long t0, t1;
     double sum, GFLOPS, minTime=40000000000;
-    // kernel width
-    // int outputRowSize = 1280;
-    // int outputColumnSize = 960;
+    
     int outputRowSize = COLS * 2;
     int outputColumnSize = ROWS * 2;
     int inputIndex, outputRow, outputColumn, outputIndex;
@@ -136,9 +128,6 @@ int main(int argc, char **argv)
     float *outputG = (float *)calloc(outputRowSize * outputColumnSize, sizeof(float));
     float *outputB = (float *)calloc(outputRowSize * outputColumnSize, sizeof(float));
 
-    // float inputImageR[12] = {1, 5, 6, 7, 80, 100, 150, 255,1, 5, 6, 7};
-    // float inputImageG[12] = {80, 100, 150, 255, 1, 5, 6, 7,6, 7, 80, 100};
-    // float inputImageB[12] = {123, 154, 112, 111, 80, 100, 150, 255,1, 5, 6, 7};
     float *inputImageR = (float *)calloc(ROWS * COLS, sizeof(float));
     float *inputImageG = (float *)calloc(ROWS * COLS, sizeof(float));
     float *inputImageB = (float *)calloc(ROWS * COLS, sizeof(float));
@@ -146,7 +135,6 @@ int main(int argc, char **argv)
     char AfileName[100];
     strcpy(AfileName, home);
     strcat(AfileName, "inputs/32x32.jpg");
-    // strcat(AfileName, "inputs/8x8.jpg");
     int i;
     decodeImage(inputImageR, inputImageG, inputImageB);
     for (int j=1;j<=24;j++){
@@ -178,9 +166,7 @@ int main(int argc, char **argv)
         GFLOPS = (12*4*((outputColumnSize*outputRowSize)/16))/sum;
         cout << j << ","<< GFLOPS <<','<< sum << endl;
     }
-    // sum = ((sum) * MAX_FREQ / BASE_FREQ)/ NUMBER_OF_RUNS;
-    
-    
+
     char BfileName[100];
     strcpy(BfileName, home);
     strcat(BfileName, "results/nn/my/8x8-16x16.jpg");

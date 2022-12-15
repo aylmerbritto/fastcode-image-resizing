@@ -5,77 +5,76 @@ versiontest : src/version.cpp
 	mkdir -p build/
 	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
 	@echo ==========================================
-	@echo Execution results
+	@echo Running version test
 	@echo ==========================================
 	./build/versiontest
 
-benchmark : src/benchmark.cpp
+bmbl : src/benchmarkBL.cpp
 	@echo ==========================================
-	@echo Compiling benchmark script
-	@echo ==========================================
-	mkdir -p build/
-	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
-	@echo ==========================================
-	@echo Executing benchmark script
-	@echo ==========================================
-	mkdir -p results/benchmark/
-	./build/benchmark > plots/benchmarkTime.csv
-	python scripts/plotPerformance.py
-
-kernel: src/fastKernel.cpp
-	@echo ==========================================
-	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
-	objdump -d ./build/kernel > kernel.S
-	./build/kernel
-
-parallel: src/parallelKernel.cpp
+	@echo Compiling the benchmark script for Bi-Linear
 	@echo ==========================================
 	g++ $(CFLAGS) $(LIBS) -fopenmp -o build/$@ $<
-	objdump -d ./build/parallel > parallel.S
-	./build/parallel
 
-parallelNN: src/nnImageParallel.cpp
+bmnn : src/benchmarkBL.cpp
+	@echo ==========================================
+	@echo Compiling the benchmark script for Nearest-neighbors
 	@echo ==========================================
 	g++ $(CFLAGS) $(LIBS) -fopenmp -o build/$@ $<
-	objdump -d ./build/parallelNN > parallel.S
-	./build/parallelNN
 
-memory: src/memory.cpp
-	g++ $(CFLAGS) $(LIBS) -o build/$@ $<	
-
-nn: src/nnImage.cpp
+kernel: src/blKernel.cpp
+	@echo ==========================================
+	@echo Compiling the bi-linear kernel
 	@echo ==========================================
 	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
+	objdump -d ./build/kernelBL > asm/kernelBL.S
+	./build/kernelBL
+
+nn: src/nnKernel.cpp
+	@echo ==========================================
+	@echo Compiling the Nearest Neighbor kernel
+	@echo ==========================================
+	mkdir -p asm
+	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
+	objdump -d ./build/nn > asm/kernelNN.S
 	./build/nn
 
-bm : src/benchmarkSpec.cpp
+parallel: src/blParallel.cpp
+	@echo ==========================================
+	@echo Compiling the parallel script for Bi-Linear
+	@echo ==========================================
 	g++ $(CFLAGS) $(LIBS) -fopenmp -o build/$@ $<
+	objdump -d ./build/parallel > asm/parallelBL.S
+	./build/parallel
 
-performance: src/performanceTest.cpp
+parallelNN: src/nnParallel.cpp
 	@echo ==========================================
-	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
-
-performanceOld: src/performanceTestOld.cpp
+	@echo Compiling the parallel script for Nearest Neighbors
 	@echo ==========================================
-	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
-
-performanceNN: src/performanceTestNN.cpp
-	@echo ==========================================
-	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
-
-parallelBM: src/benchmarkParallel.cpp
 	g++ $(CFLAGS) $(LIBS) -fopenmp -o build/$@ $<
-	./build/parallelBM
+	objdump -d ./build/parallelNN > asm/parallelNN.S
+	./build/parallelNN	
 
-rp: clean bm performance
-	sh performanceDriver.sh > plots/kernelPerformance.csv
+performance: src/blPerformance.cpp
+	@echo ==========================================
+	@echo Compiling the parallel script for Bi-Linear Script
+	@echo ==========================================
+	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
 
-rpnn: clean bm performanceNN
+performanceNN: src/nnPerformance.cpp
+	@echo ==========================================
+	@echo Compiling the parallel script for Nearest Neighbors
+	@echo ==========================================
+	g++ $(CFLAGS) $(LIBS) -o build/$@ $<
+
+bi-linear-performance: clean bmbl performance
+	sh performanceDriverBL.sh > plots/kernelPerformance.csv
+
+nn-performance: clean bmnn performanceNN
 	sh performanceDriverNN.sh > plots/kernelPerformanceNN.csv
 
-rpOld: clean bm performanceOld
-	sh performanceDriverbkp.sh > plots/kernelPerformance.csv
+bi-linear-run: clean kernel
 
+nn-run: clean nn
 
 clean : 
 	rm -rf build/*

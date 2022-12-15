@@ -65,9 +65,6 @@ int encodeImage(float *outputR, float *outputG, float *outputB, char *fileName)
     vector<Mat> channels;
     Mat finalImage;
     Mat out;
-    // cv::Mat matR = cv::Mat(480 * 2, 640 * 2, CV_32F, outputR);
-    // cv::Mat matG = cv::Mat(480 * 2, 640 * 2, CV_32F, outputG);
-    // cv::Mat matB = cv::Mat(480 * 2, 640 * 2, CV_32F, outputB);
     cv::Mat matR = cv::Mat(ROWS * 2, COLS * 2, CV_32F, outputR);
     cv::Mat matG = cv::Mat(ROWS * 2, COLS * 2, CV_32F, outputG);
     cv::Mat matB = cv::Mat(ROWS * 2, COLS * 2, CV_32F, outputB);
@@ -89,8 +86,6 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     const int mask0 = (0) | (0 << 2) | (1 << 4) | (1 << 6);
     const int mask1 = (2) | (2 << 2) | (3 << 4) | (3 << 6);
 
-    
-    
     inR = _mm_load_ps(intensityRin);
     outRA = _mm_permute_ps(inR, mask0);
     outRB = _mm_permute_ps(inR, mask1);
@@ -102,29 +97,18 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
     outGB = _mm_permute_ps(inG, mask1);
 
     _mm_store_ps(intensityRout + (0 * rowSize), outRA);
-    _mm_store_ps(intensityRout + (1 * rowSize), outRA);
-    
     _mm_store_ps(intensityRout + 4, outRB);
-    _mm_store_ps(intensityRout + 4 + rowSize, outRB);
-    
-
-    
-    _mm_store_ps(intensityBout + (0 * rowSize), outBA);
-    _mm_store_ps(intensityBout + (1 * rowSize), outBA);
-    
-    _mm_store_ps(intensityBout + 4, outBB);
-    _mm_store_ps(intensityBout + (4+ rowSize), outBB);
-    
-    
     _mm_store_ps(intensityGout + (0 * rowSize), outGA);
-    _mm_store_ps(intensityGout + (1 * rowSize), outGA);
-    
     _mm_store_ps(intensityGout + 4, outGB);
+    _mm_store_ps(intensityBout + (0 * rowSize), outBA);
+    _mm_store_ps(intensityBout + 4, outBB);
+
+    _mm_store_ps(intensityRout + (1 * rowSize), outRA);
+    _mm_store_ps(intensityRout + 4 + rowSize, outRB);
+    _mm_store_ps(intensityBout + (1 * rowSize), outBA);
+    _mm_store_ps(intensityBout + (4+ rowSize), outBB);
+    _mm_store_ps(intensityGout + (1 * rowSize), outGA);
     _mm_store_ps(intensityGout + (4+ rowSize), outGB);
-    
-    
-    
-    
     
 }
 
@@ -132,9 +116,6 @@ int main(int argc, char **argv)
 {
     unsigned long long t0, t1;
     double sum, GFLOPS, minTime=40000000000;
-    // kernel width
-    // int outputRowSize = 1280;
-    // int outputColumnSize = 960;
     int outputRowSize = COLS * 2;
     int outputColumnSize = ROWS * 2;
     int inputIndex, outputRow, outputColumn, outputIndex;
@@ -144,9 +125,6 @@ int main(int argc, char **argv)
     float *outputG = (float *)calloc(outputRowSize * outputColumnSize, sizeof(float));
     float *outputB = (float *)calloc(outputRowSize * outputColumnSize, sizeof(float));
 
-    // float inputImageR[12] = {1, 5, 6, 7, 80, 100, 150, 255,1, 5, 6, 7};
-    // float inputImageG[12] = {80, 100, 150, 255, 1, 5, 6, 7,6, 7, 80, 100};
-    // float inputImageB[12] = {123, 154, 112, 111, 80, 100, 150, 255,1, 5, 6, 7};
     float *inputImageR = (float *)calloc(ROWS * COLS, sizeof(float));
     float *inputImageG = (float *)calloc(ROWS * COLS, sizeof(float));
     float *inputImageB = (float *)calloc(ROWS * COLS, sizeof(float));
@@ -154,7 +132,6 @@ int main(int argc, char **argv)
     char AfileName[100];
     strcpy(AfileName, home);
     strcat(AfileName, "inputs/black-images/4096x4096.jpg");
-    // strcat(AfileName, "inputs/8x8.jpg");
 
     decodeImage(inputImageR, inputImageG, inputImageB);
 
@@ -179,7 +156,6 @@ int main(int argc, char **argv)
         GFLOPS = (12*4*((outputColumnSize*outputRowSize)/16))/sum;
         cout << k << "," <<GFLOPS <<','<< sum << endl;
     }   
-    // sum = ((sum) * MAX_FREQ / BASE_FREQ)/ NUMBER_OF_RUNS;
     sum = ((minTime) * MAX_FREQ / BASE_FREQ);
     GFLOPS = (12*4*((outputColumnSize*outputRowSize)/16))/sum;
     cout << GFLOPS <<','<< sum << endl;
@@ -194,4 +170,3 @@ int main(int argc, char **argv)
     free(outputG);
     free(outputB);
 }
-// 4*2*2

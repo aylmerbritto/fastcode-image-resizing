@@ -16,13 +16,11 @@ using namespace std;
 #define BASE_FREQ 2.4
 #define WINDOWSIZE 2
 
-#define INPUTWIDTH 8
-#define INPUTHEIGHT 8
+#define INPUTWIDTH 640
+#define INPUTHEIGHT 480
 
-#define mask0  (0) | (0 << 2) | (0 << 4) | (0 << 6)
-#define mask1  (1) | (1 << 2) | (1 << 4) | (1 << 6)
-#define mask2  (2) | (2 << 2) | (2 << 4) | (2 << 6)
-#define mask3  (3) | (3 << 2) | (3 << 4) | (3 << 6)
+#define NUMBER_OF_RUNS 100
+
 
 // timing routine for reading the time stamp counter
 static __inline__ unsigned long long rdtsc(void)
@@ -33,19 +31,16 @@ static __inline__ unsigned long long rdtsc(void)
     return ((unsigned long long)lo) | (((unsigned long long)hi) << 32);
 }
 
-int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB)
+int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB,char *fileName)
 {
     int i, j, index = 0;
     float *tmpBuffer;
     // READ IMAGE and Init buffers
-    const char *fileName = "inputs/8x8.jpg";
     Mat fullImage, windowImage;
     Mat channels[3];
     std::vector<float> array;
     fullImage = imread(fileName);
     int imageRows = (int)fullImage.rows, imageCols = (int)fullImage.cols;
-    cout << "Width : " << imageCols << endl;
-    cout << "Height: " << imageRows << endl;
     
     split(fullImage, channels);
     array.assign(channels[0].datastart, channels[0].dataend);
@@ -57,9 +52,9 @@ int decodeImage(float *inputImageR, float *inputImageG, float *inputImageB)
     array.assign(channels[2].datastart, channels[2].dataend);
     tmpBuffer = &array[0];
     memcpy(inputImageR, tmpBuffer, imageCols * imageRows * sizeof(float));
-    cout << "RGB Channels Read and assgined"<<endl;
     return 0;
 }
+
 
 int encodeImage(float *outputR, float *outputG, float *outputB){
     const char *fileName = "/afs/ece.cmu.edu/usr/arexhari/Public/645-project/results/640x480-bl.jpg";
@@ -113,10 +108,6 @@ void generateCoefficients(float *coefficients)
     vec2 = _mm_load_ps(vec2flt);
     vec3 = _mm_load_ps(vec3flt);
     vec4 = _mm_load_ps(vec4flt);
-    // vec1 = _mm_set_ps(0, 1/3.0, 2/3.0, 1); //z*a1*c
-    // vec2 = _mm_set_ps(0, 2/9.0, 4/9.0, 6/9.0); //z*a2*c
-    // vec3 = _mm_set_ps(0, 1/9.0, 2/9.0, 3/9.0); //z*a3*c
-    // vec4 = _mm_set_ps(0, 0, 0, 0); //z*a4*c
     _mm_store_ps(coefficients, vec1);
     _mm_store_ps(coefficients + 4, vec2);
     _mm_store_ps(coefficients + 8, vec3);
@@ -130,10 +121,6 @@ void generateCoefficients(float *coefficients)
     vec2 = _mm_load_ps(vec6flt);
     vec3 = _mm_load_ps(vec7flt);
     vec4 = _mm_load_ps(vec8flt);
-    // vec1 = _mm_set_ps(1, 2 / 3.0, 1 / 3.0, 0);       // z*a1*d
-    // vec2 = _mm_set_ps(6 / 9.0, 4 / 9.0, 2 / 9.0, 0); // z*a2*d
-    // vec3 = _mm_set_ps(3 / 9.0, 2 / 9.0, 1 / 9.0, 0); // z*a3*d
-    // vec4 = _mm_set_ps(0, 0, 0, 0);                   // z*a4*c
     _mm_store_ps(coefficients + 16, vec1);
     _mm_store_ps(coefficients + 20, vec2);
     _mm_store_ps(coefficients + 24, vec3);
@@ -147,10 +134,6 @@ void generateCoefficients(float *coefficients)
     vec2 = _mm_load_ps(vec10flt);
     vec3 = _mm_load_ps(vec11flt);
     vec4 = _mm_load_ps(vec12flt);
-    // vec4 = _mm_set_ps(0, 1 / 3.0, 2 / 3.0, 1);       // z*b4*c
-    // vec3 = _mm_set_ps(0, 2 / 9.0, 4 / 9.0, 6 / 9.0); // z*b3*c
-    // vec2 = _mm_set_ps(0, 1 / 9.0, 2 / 9.0, 3 / 9.0); // z*b2*c
-    // vec1 = _mm_set_ps(0, 0, 0, 0);                   // z*b1*c
     _mm_store_ps(coefficients + 32, vec1);
     _mm_store_ps(coefficients + 36, vec2);
     _mm_store_ps(coefficients + 40, vec3);
@@ -164,11 +147,6 @@ void generateCoefficients(float *coefficients)
     vec2 = _mm_load_ps(vec14flt);
     vec3 = _mm_load_ps(vec15flt);
     vec4 = _mm_load_ps(vec16flt);
-
-    // vec4 = _mm_set_ps(1.0, 2 / 3.0, 1 / 3.0, 0.0);     // z*b4*d
-    // vec3 = _mm_set_ps(6 / 9.0, 4 / 9.0, 2 / 9.0, 0.0); // z*b3*d
-    // vec2 = _mm_set_ps(3 / 9.0, 2 / 9.0, 1 / 9.0, 0.0); // z*b2*d
-    // vec1 = _mm_set_ps(0.0, 0.0, 0.0, 0.0);             // z*b1*d
     _mm_store_ps(coefficients + 48, vec1);
     _mm_store_ps(coefficients + 52, vec2);
     _mm_store_ps(coefficients + 56, vec3);
@@ -248,11 +226,15 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
 
 int main(int argc, char **argv)
 {
-    unsigned long long t0, t1, sum=0;
+    char *fileName = argv[1];
+    int gnWidth = atoi(argv[2]);
+    int gnHeight = atoi(argv[3]);
+    unsigned long long t0, t1;
+    long double sum=0, packingTime = 0, GFLOPS=0;
     // kernel width
-    int outputRowSize = INPUTWIDTH*2;
-    int outputColumnSize = INPUTHEIGHT*2;
-    int inputIndex, outputRow, outputColumn, outputIndex;
+    int outputRowSize = gnWidth*2;
+    int outputColumnSize = gnHeight*2;
+    int inputIndex, outputRow, outputColumn, outputIndex, OoutputRow, OoutputColumn, OoutputIndex, OinputIndex;
 
     // Output Image Stack defintion
     float *outputR = (float *)calloc(outputRowSize * outputColumnSize, sizeof(float));
@@ -260,43 +242,55 @@ int main(int argc, char **argv)
     float *outputB = (float *)calloc(outputRowSize * outputColumnSize, sizeof(float));
 
     // read in input 2x2 pixels
-    float *inputImageR = (float *)calloc(INPUTWIDTH * INPUTHEIGHT, sizeof(float));
-    float *inputImageG = (float *)calloc(INPUTWIDTH * INPUTHEIGHT, sizeof(float)); 
-    float *inputImageB = (float *)calloc(INPUTWIDTH * INPUTHEIGHT, sizeof(float));
+    float *inputImageR = (float *)calloc(gnHeight * gnWidth, sizeof(float));
+    float *inputImageG = (float *)calloc(gnHeight * gnWidth, sizeof(float)); 
+    float *inputImageB = (float *)calloc(gnHeight * gnWidth, sizeof(float));
     t0 = rdtsc();
-    decodeImage(inputImageR, inputImageG, inputImageB);
+    decodeImage(inputImageR, inputImageG, inputImageB, fileName);
     t1 = rdtsc();
-    // printf("PREPROCESSING TIME %f\n", ((double)(t1-t0) * MAX_FREQ / BASE_FREQ));
+    packingTime = (t1-t0) * MAX_FREQ / BASE_FREQ;
     float *coefficients = (float *)calloc(4 * 4 * 4, sizeof(float));
-    generateCoefficients(coefficients);
-    int n16 = INPUTWIDTH/16;
     // generate coefficients
-    for(int i = 0; i < (outputColumnSize*outputRowSize)/16 ; i++){
-        outputRow = 4*((i*2)/(outputRowSize/2));
-        outputColumn = 2*((i*2)%(outputRowSize/2));
-        outputIndex = (outputRow*outputRowSize)+outputColumn;
-        inputIndex = ((outputRow*outputRowSize)/4)+(outputColumn/2);
-        // cout << i << "  " <<inputIndex<< "  "  << outputIndex<<endl;
-        t0 = rdtsc();
-        kernel(inputImageR+inputIndex, inputImageG+inputIndex, inputImageB+inputIndex,outputR+outputIndex, outputG+outputIndex, outputB+outputIndex,coefficients, outputRowSize);
-        t1 = rdtsc();
-        sum=sum+(t1-t0);
-    }
-    
-    sum =  ((sum) * MAX_FREQ / BASE_FREQ);
-    double GFLOPS = (2*48*4*((INPUTHEIGHT*INPUTWIDTH*4)/16))/sum;
-    cout << GFLOPS << ","<<GFLOPS<< endl;
-    encodeImage(outputR, outputG, outputB);
+    generateCoefficients(coefficients);
+    double localSum = 0;
+    long double minTime = 4000000000000000;
+    OoutputIndex = 0; OinputIndex = 0;
+    // for(int t=0;t<(gnHeight*gnWidth/256);t++){
+    //     OoutputRow = 16*((t*16)/(outputRowSize/2));
+    //     OoutputColumn = 2*((t*16)%(outputRowSize/2));
+    //     OoutputIndex = (OoutputRow*outputRowSize)+OoutputColumn;
+    //     OinputIndex = ((OoutputRow*outputRowSize)/4)+(outputColumn/2);
+    //     if(gnHeight>16){
+    //         outputColumnSize = 32;
+    //         outputRowSize = 32;
+    //     }
+        minTime = 4000000000000000;
+        for(int k = 0; k < NUMBER_OF_RUNS; k++){
+            sum=0;
+            for(int i = 0; i < (outputColumnSize*outputRowSize)/16 ; i++){
+                // cout << "In here" << i << endl;
+                outputRow = 4*((i*2)/(outputRowSize/2));
+                outputColumn = 2*((i*2)%(outputRowSize/2));
+                outputIndex = OoutputIndex+(outputRow*outputRowSize)+outputColumn;
+                inputIndex = OinputIndex+((outputRow*outputRowSize)/4)+(outputColumn/2);
+                t0 = rdtsc();
+                kernel(inputImageR+inputIndex, inputImageG+inputIndex, inputImageB+inputIndex,outputR+outputIndex, outputG+outputIndex, outputB+outputIndex,coefficients, outputRowSize);
+                t1 = rdtsc();
+                sum=sum+(t1-t0);
+            }
+            if(sum<minTime){
+                minTime =sum;
+            }
+        }
+        // localSum = localSum+minTime;
+    // }
+    // sum = ((sum) * MAX_FREQ / BASE_FREQ)/NUMBER_OF_RUNS;
+    sum = minTime* MAX_FREQ / BASE_FREQ;
+    GFLOPS = (2*48*4*((gnHeight*gnWidth*4)/16))/sum;
+    cout << gnHeight <<','<< GFLOPS <<','<< sum;
+    // encodeImage(outputR, outputG, outputB);
     free(coefficients);
     free(outputR);
     free(outputG);
     free(outputB);
 }
-
-
-
-/*
-1. how many 16x16 images
-2. inputR = skip 16x16 = 256
-2. outputR  = skip 32x32 = 
-*/
