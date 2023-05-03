@@ -19,7 +19,7 @@ using namespace std;
 #define INPUTWIDTH 640
 #define INPUTHEIGHT 480
 
-#define NUMBER_OF_RUNS 100
+#define NUMBER_OF_RUNS 1
 
 
 // timing routine for reading the time stamp counter
@@ -286,8 +286,9 @@ int main(int argc, char **argv)
     }
     // sum = ((sum) * MAX_FREQ / BASE_FREQ)/NUMBER_OF_RUNS;
     sum = localSum* MAX_FREQ / BASE_FREQ;
+    double time = sum/240000;
     GFLOPS = (2*48*4*((gnHeight*gnWidth*4)/16))/sum;
-    cout << gnHeight <<','<< GFLOPS <<','<< sum;
+    cout << gnHeight <<','<< GFLOPS <<','<< sum<<',' << time << endl;
     // encodeImage(outputR, outputG, outputB);
     free(coefficients);
     free(outputR);

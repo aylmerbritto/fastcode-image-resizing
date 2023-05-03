@@ -16,13 +16,15 @@ using namespace std;
 #define BASE_FREQ 2.4
 #define WINDOWSIZE 2
 
-#define INPUTWIDTH 32
-#define INPUTHEIGHT 32
+
 #define NUM_RUNS 100
 #define mask0  (0) | (0 << 2) | (0 << 4) | (0 << 6)
 #define mask1  (1) | (1 << 2) | (1 << 4) | (1 << 6)
 #define mask2  (2) | (2 << 2) | (2 << 4) | (2 << 6)
 #define mask3  (3) | (3 << 2) | (3 << 4) | (3 << 6)
+
+int INPUTWIDTH;
+int INPUTHEIGHT;
 
 // timing routine for reading the time stamp counter
 static __inline__ unsigned long long rdtsc(void)
@@ -248,10 +250,13 @@ void kernel(float *intensityRin, float *intensityGin, float *intensityBin, float
 
 int main(int argc, char **argv)
 {
+    char *fileName = argv[1];
+
     int i,k,nThreads;
     // unsigned long long t0, t1 ;
     double sum=0,GFLOPS,t0, t1;
-
+    INPUTHEIGHT = atoi(argv[3]);
+    INPUTWIDTH = atoi(argv[2]);
     // kernel width
     int outputRowSize = INPUTWIDTH*2;
     int outputColumnSize = INPUTHEIGHT*2;
@@ -270,7 +275,7 @@ int main(int argc, char **argv)
     float *coefficients = (float *)calloc(4 * 4 * 4, sizeof(float));
     generateCoefficients(coefficients);
     
-    for (int j=1;j<=24;j++){
+    for (int j=8;j<=8;j++){
         omp_set_num_threads(j);
         for(k =0; k<NUM_RUNS; k++){
             // sum = 0;
@@ -299,8 +304,9 @@ int main(int argc, char **argv)
                 }
         }
         sum = (sum* MAX_FREQ / BASE_FREQ)/NUM_RUNS;
+        double time = sum/240000;
         GFLOPS = (2*48*4*((outputColumnSize*outputRowSize)/16))/sum;
-        cout << j<<"," << GFLOPS <<','<< sum<<endl;
+        cout << INPUTWIDTH<<"," << GFLOPS <<','<< sum<< ',' << time << endl;
     }
     encodeImage(outputR, outputG, outputB);
     free(coefficients);
