@@ -9,6 +9,9 @@ The path to our workspace directory is `/afs/ece.cmu.edu/usr/arexhari/Public/645
 ## GPU Code Execution
 1. `make gpu-bl` - is to run all the implementaions of our GPU kernel. This command will all the 4 variants of our implementation across image sizes form 2x2 to 8192x8192. The four different variants are: naive implmentation, Pragma Unroll, Manual unroll and interleaved instructions
 
+| File | Description ||
+| (src/src/gpu-bi-linear-loop.cu)[Naive Implementation] | This is the naive implementation with for loops for all computations ||
+
 ## Baseline Codes
 ### Nearest Neighbors
 1. `make bi-linear-run` is to demonstrate the functional correctness of our nearest neighbor interpolation algorithm
