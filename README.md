@@ -11,7 +11,10 @@ The path to our workspace directory is `/afs/ece.cmu.edu/usr/arexhari/Public/645
 
 | File | Description |
 | ---- | ----------- |
-| (src/src/gpu-bi-linear-loop.cu)[Naive Implementation] | This is the naive implementation with for loops for all computations |
+| gpu-bi-linear-loop.cu | This is the naive implementation with for loops for all computations |
+| gpu-bi-linear-loop-pragma.cu  | This is implementation with pragma unroll optimisation|
+| gpu-bi-linear-manual-unroll32.cu  | This is the implementation with manually unrolly all the irterations in the kernel|
+| gpu-bi-linear-unrolled-interleave.cu | This is the  implementation of the unrolled code with instructions interleaved |
 
 ## Baseline Codes
 ### Nearest Neighbors
