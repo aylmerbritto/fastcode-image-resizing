@@ -1,11 +1,15 @@
 # Fast Code for Image Interpolation
-This is a part of submission for the course 18-645: How To Write Fast Code 
+This is a part of submission for the course 18-646: How To Write Fast Code II
 
 ### Workspace
-We conducted our experiments on the ECE cluster. The ECE machine is `ece004.ece.local.cmu.edu` . <br>
+We conducted our experiments on the ECE cluster. The ECE machine is `ece020.ece.local.cmu.edu` . <br>
 The path to our workspace directory is `/afs/ece.cmu.edu/usr/arexhari/Public/645-project` 
 
 ## Code Execution Instructions:
+## GPU Code Execution
+1. `make gpu-bl` - is to run all the implementaions of our GPU kernel. This command will all the 4 variants of our implementation across image sizes form 2x2 to 8192x8192. The four different variants are: naive implmentation, Pragma Unroll, Manual unroll and interleaved instructions
+
+## Baseline Codes
 ### Nearest Neighbors
 1. `make bi-linear-run` is to demonstrate the functional correctness of our nearest neighbor interpolation algorithm
   - It makes use of a inputs/640-480.jpg and writes the output to results/640x480-nn.jpg
